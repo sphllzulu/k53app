@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/services/supabase_service.dart';
+import '../../../gamification/presentation/widgets/gamification_progress_widget.dart';
+import '../../../gamification/presentation/providers/gamification_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -21,42 +24,146 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Center(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome to K53 Learner\'s License App!',
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
+            // Welcome section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome to K53 Learner\'s License App!',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    if (currentUser != null) ...[
+                      Text(
+                        'Logged in as: ${currentUser.email}',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'User ID: ${currentUser.id.substring(0, 8)}...',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
-            if (currentUser != null) ...[
-              Text(
-                'Logged in as: ${currentUser.email}',
-                style: Theme.of(context).textTheme.bodyLarge,
+
+            const SizedBox(height: 16),
+
+            // Gamification progress
+            const GamificationProgressWidget(),
+
+            const SizedBox(height: 24),
+
+            // Quick actions
+            Text(
+              'Quick Actions',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 10),
-              Text(
-                'User ID: ${currentUser.id}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to study mode
-              },
-              child: const Text('Start Studying'),
             ),
             const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: () {
-                // Navigate to exam mode
-              },
-              child: const Text('Take Mock Exam'),
+            
+            GridView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.5,
+              ),
+              children: [
+                _buildActionCard(
+                  context,
+                  icon: Icons.school,
+                  title: 'Study Mode',
+                  subtitle: 'Learn at your own pace',
+                  onTap: () => context.go('/study'),
+                  color: Colors.blue,
+                ),
+                _buildActionCard(
+                  context,
+                  icon: Icons.assignment,
+                  title: 'Mock Exam',
+                  subtitle: 'Test your knowledge',
+                  onTap: () {
+                    // Navigate to exam mode
+                  },
+                  color: Colors.green,
+                ),
+                _buildActionCard(
+                  context,
+                  icon: Icons.leaderboard,
+                  title: 'Progress',
+                  subtitle: 'View your stats',
+                  onTap: () {
+                    // Navigate to progress screen
+                  },
+                  color: Colors.orange,
+                ),
+                _buildActionCard(
+                  context,
+                  icon: Icons.settings,
+                  title: 'Settings',
+                  subtitle: 'App preferences',
+                  onTap: () {
+                    // Navigate to settings
+                  },
+                  color: Colors.purple,
+                ),
+              ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return Card(
+      elevation: 2,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 32, color: color),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

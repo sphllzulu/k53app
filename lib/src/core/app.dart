@@ -14,18 +14,13 @@ class K53App extends ConsumerStatefulWidget {
 }
 
 class _K53AppState extends ConsumerState<K53App> {
-  late final GoRouter _router;
-
-  @override
-  void initState() {
-    super.initState();
-    _router = AppRouter.router(ref);
-  }
-
   @override
   Widget build(BuildContext context) {
     // Watch auth state to rebuild when auth changes
     final authState = ref.watch(authProvider);
+    
+    // Create router in build method to have access to ref
+    final router = AppRouter.router(ref);
 
     return MaterialApp.router(
       title: 'K53 Learner\'s License',
@@ -46,7 +41,7 @@ class _K53AppState extends ConsumerState<K53App> {
         fontFamily: 'Inter',
       ),
       themeMode: ThemeMode.system,
-      routerConfig: _router,
+      routerConfig: router,
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
         return GestureDetector(

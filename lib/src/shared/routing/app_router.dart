@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/study/presentation/screens/study_screen.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) {
@@ -39,6 +40,14 @@ class AppRouter {
           pageBuilder: (context, state) => MaterialPage(
             key: state.pageKey,
             child: const DashboardScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/study',
+          name: 'study',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const StudyScreen(),
           ),
         ),
         GoRoute(
