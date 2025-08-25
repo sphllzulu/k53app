@@ -69,7 +69,17 @@ ENABLE_OFFLINE_MODE=true
 3. Update the `.env` file with your credentials
 4. Run the database schema migrations (see Database Setup below)
 
-### 5. Run the Application
+### 5. Database Deployment
+
+Before running the application, you need to deploy the database schema:
+
+1. **Create Supabase Project**: Go to [Supabase](https://supabase.com) and create a new project
+2. **Update Environment**: Set your Supabase credentials in `.env` file
+3. **Run Migration**: Execute the SQL migration from `supabase/migrations/001_initial_schema.sql` in the Supabase SQL Editor
+
+Detailed deployment instructions: [supabase/README_DEPLOYMENT.md](supabase/README_DEPLOYMENT.md)
+
+### 6. Run the Application
 
 ```bash
 # For development
