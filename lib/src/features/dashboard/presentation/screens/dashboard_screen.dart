@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/services/supabase_service.dart';
 import '../../../gamification/presentation/widgets/gamification_progress_widget.dart';
 import '../../../gamification/presentation/providers/gamification_provider.dart';
+import '../../../referral/presentation/widgets/referral_widget.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -61,6 +62,11 @@ class DashboardScreen extends ConsumerWidget {
 
             // Gamification progress
             const GamificationProgressWidget(),
+
+            const SizedBox(height: 16),
+
+            // Referral program
+            const ReferralWidget(),
 
             const SizedBox(height: 24),
 

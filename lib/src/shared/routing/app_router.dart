@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/accessibility_test/presentation/screens/accessibility_test_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -48,6 +49,14 @@ class AppRouter {
           pageBuilder: (context, state) => MaterialPage(
             key: state.pageKey,
             child: const StudyScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/accessibility-test',
+          name: 'accessibility-test',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const AccessibilityTestScreen(),
           ),
         ),
         GoRoute(
