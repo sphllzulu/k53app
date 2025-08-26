@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:k53app/src/core/models/question.dart';
-import 'package:k53app/src/core/services/analytics_service.dart';
-import 'package:k53app/src/core/services/database_service.dart';
-import 'package:k53app/src/core/services/supabase_service.dart';
-import 'package:k53app/src/features/gamification/presentation/providers/gamification_provider.dart';
+import '../../../../core/models/question.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/database_service.dart';
+import '../../../../core/services/supabase_service.dart';
+import '../../../gamification/presentation/providers/gamification_provider.dart';
 
 class StudyState {
   final List<Question> questions;

@@ -40,27 +40,55 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
 
       if (response.user != null) {
         // Check if user has admin role
-        final profile = await SupabaseService.client
-            .from('profiles')
-            .select('role')
-            .eq('id', response.user!.id)
-            .single();
+        try {
+          final profile = await SupabaseService.client
+              .from('profiles')
+              .select('role')
+              .eq('id', response.user!.id)
+              .single();
 
-        final role = profile['role'] as String?;
-        
-        if (role == 'admin' || role == 'qa_reviewer') {
-          context.go('/admin/dashboard');
-        } else {
+          final role = profile['role'] as String?;
+          print('User role: $role'); // Debug logging
+          
+          if (role == 'admin' || role == 'qa_reviewer') {
+            print('Navigating to admin dashboard'); // Debug logging
+            print('User role confirmed: $role');
+            try {
+              context.go('/admin/dashboard');
+              print('Navigation to admin dashboard initiated');
+            } catch (e) {
+              print('Navigation error: $e');
+              if (mounted) {
+                setState(() {
+                  _errorMessage = 'Navigation failed: ${e.toString()}';
+                });
+              }
+            }
+          } else {
+            print('Access denied - user role: $role'); // Debug logging
+            await SupabaseService.auth.signOut();
+            if (mounted) {
+              setState(() {
+                _errorMessage = 'Access denied. Admin privileges required. User role: $role';
+              });
+            }
+          }
+        } catch (e) {
+          print('Error checking user role: $e'); // Debug logging
           await SupabaseService.auth.signOut();
-          setState(() {
-            _errorMessage = 'Access denied. Admin privileges required.';
-          });
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'Error checking admin privileges. Please contact support.';
+            });
+          }
         }
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Login failed: ${e.toString()}';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Login failed: ${e.toString()}';
+        });
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -185,6 +213,11 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
               TextButton(
                 onPressed: () => context.go('/auth/login'),
                 child: const Text('← Back to User Login'),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: () => context.go('/admin/test'),
+                child: const Text('Debug: Test Admin Access'),
               ),
             ],
           ),

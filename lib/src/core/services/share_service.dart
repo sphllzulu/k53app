@@ -1,8 +1,8 @@
 import 'package:share_plus/share_plus.dart';
-import 'package:k53app/src/core/models/referral.dart';
-import 'package:k53app/src/core/services/database_service.dart';
-import 'package:k53app/src/core/services/supabase_service.dart';
-import 'package:k53app/src/core/services/gamification_service.dart';
+import '../models/referral.dart';
+import './database_service.dart';
+import './supabase_service.dart';
+import './gamification_service.dart';
 import '../models/achievement.dart';
 
 class ShareService {

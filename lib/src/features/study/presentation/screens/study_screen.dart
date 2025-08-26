@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/question.dart';
+import '../../../../core/services/qa_service.dart';
 import '../providers/study_provider.dart';
 import '../../../gamification/presentation/providers/gamification_provider.dart';
 
@@ -66,6 +67,45 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     final notifier = ref.read(studyProvider.notifier);
     await notifier.retrySession();
     _pageController.jumpToPage(0);
+  }
+
+  Future<void> _reportQuestion(Question question) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report Question'),
+        content: const Text('Would you like to report this question for review?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Report'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      final success = await QAService.reportQuestion(
+        questionId: question.id,
+        reason: 'other',
+        description: 'User reported question during study session',
+        severity: 'medium',
+      );
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Question reported successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to report question')),
+        );
+      }
+    }
   }
 
   Widget _buildCategorySelector() {
@@ -213,6 +253,20 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ],
+            
+            // Report Question Button
+            if (state.showExplanation) ...[
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () => _reportQuestion(question),
+                icon: const Icon(Icons.flag, size: 16),
+                label: const Text('Report Question'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.orange,
+                  side: const BorderSide(color: Colors.orange),
                 ),
               ),
             ],
