@@ -103,7 +103,10 @@ class DashboardScreen extends ConsumerWidget {
                   title: 'Mock Exam',
                   subtitle: 'Test your knowledge',
                   onTap: () {
-                    // Navigate to exam mode
+                    // TODO: Implement mock exam navigation
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Mock exam feature coming soon!')),
+                    );
                   },
                   color: Colors.green,
                 ),
@@ -113,7 +116,10 @@ class DashboardScreen extends ConsumerWidget {
                   title: 'Progress',
                   subtitle: 'View your stats',
                   onTap: () {
-                    // Navigate to progress screen
+                    // TODO: Implement progress screen navigation
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Progress tracking coming soon!')),
+                    );
                   },
                   color: Colors.orange,
                 ),
@@ -123,7 +129,10 @@ class DashboardScreen extends ConsumerWidget {
                   title: 'Settings',
                   subtitle: 'App preferences',
                   onTap: () {
-                    // Navigate to settings
+                    // TODO: Implement settings navigation
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Settings screen coming soon!')),
+                    );
                   },
                   color: Colors.purple,
                 ),

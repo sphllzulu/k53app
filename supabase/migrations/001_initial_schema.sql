@@ -134,6 +134,57 @@ CREATE TABLE question_reports (
 CREATE UNIQUE INDEX unique_user_question_report
 ON question_reports(reporter_user_id, question_id);
 
+-- Automated and manual flags for admin QA
+CREATE TABLE question_flags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    question_id UUID REFERENCES questions(id) ON DELETE CASCADE,
+    flag_type TEXT NOT NULL CHECK (flag_type IN (
+        'low_success_rate',
+        'high_report_rate',
+        'statistical_anomaly',
+        'manual_review',
+        'content_audit'
+    )),
+    severity TEXT DEFAULT 'medium' CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+    details JSONB,
+    status TEXT DEFAULT 'open' CHECK (status IN ('open', 'in_review', 'resolved', 'dismissed')),
+    auto_generated BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ,
+    resolved_by UUID REFERENCES profiles(id)
+);
+
+-- QA actions and audit trail
+CREATE TABLE qa_actions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    question_id UUID REFERENCES questions(id) ON DELETE CASCADE,
+    flag_id UUID REFERENCES question_flags(id) ON DELETE CASCADE,
+    reviewer_user_id UUID REFERENCES profiles(id),
+    action_type TEXT NOT NULL CHECK (action_type IN (
+        'flag_created',
+        'under_review',
+        'question_edited',
+        'question_removed',
+        'flag_resolved',
+        'flag_dismissed',
+        'escalated'
+    )),
+    details JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Content quality metrics
+CREATE TABLE question_quality_metrics (
+    question_id UUID PRIMARY KEY REFERENCES questions(id) ON DELETE CASCADE,
+    total_attempts INTEGER DEFAULT 0,
+    correct_attempts INTEGER DEFAULT 0,
+    success_rate DECIMAL(5,2),
+    report_count INTEGER DEFAULT 0,
+    avg_time_to_answer INTEGER,
+    quality_score DECIMAL(3,2),
+    last_updated TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_questions_category ON questions(category);
 CREATE INDEX idx_questions_learner_code ON questions(learner_code);
@@ -147,6 +198,12 @@ CREATE INDEX idx_referrals_referrer_id ON referrals(referrer_user_id);
 CREATE INDEX idx_question_reports_question_id ON question_reports(question_id);
 CREATE INDEX idx_question_reports_user_id ON question_reports(reporter_user_id);
 CREATE INDEX idx_question_reports_created_at ON question_reports(created_at);
+CREATE INDEX idx_question_flags_question_id ON question_flags(question_id);
+CREATE INDEX idx_question_flags_status ON question_flags(status);
+CREATE INDEX idx_question_flags_severity ON question_flags(severity);
+CREATE INDEX idx_qa_actions_question_id ON qa_actions(question_id);
+CREATE INDEX idx_qa_actions_reviewer_id ON qa_actions(reviewer_user_id);
+CREATE INDEX idx_quality_metrics_question_id ON question_quality_metrics(question_id);
 
 -- Enable Row Level Security on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -158,6 +215,9 @@ ALTER TABLE achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE question_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE question_flags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE qa_actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE question_quality_metrics ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 
@@ -242,6 +302,40 @@ CREATE POLICY "Users can create own reports" ON question_reports
 CREATE POLICY "Users can view own reports" ON question_reports
     FOR SELECT TO authenticated
     USING (auth.uid() = reporter_user_id);
+
+-- Add role column to profiles table for admin access
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin', 'qa_reviewer'));
+
+-- Admin QA policies
+CREATE POLICY "qa_flags_admin_access" ON question_flags
+    FOR ALL TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid()
+            AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "qa_actions_admin_access" ON qa_actions
+    FOR ALL TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid()
+            AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "quality_metrics_admin_access" ON question_quality_metrics
+    FOR ALL TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid()
+            AND role = 'admin'
+        )
+    );
 
 -- Create function to automatically create user profile
 CREATE OR REPLACE FUNCTION public.handle_new_user()

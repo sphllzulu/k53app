@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../../core/services/supabase_service.dart';
 
@@ -156,6 +157,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ],
                 ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => context.go('/admin/login'),
+                child: const Text('Admin Login →'),
+              ),
             ],
           ),
         ),

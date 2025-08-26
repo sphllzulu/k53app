@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/accessibility_test/presentation/screens/accessibility_test_screen.dart';
+import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
+import '../../features/admin_auth/presentation/screens/admin_login_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -57,6 +59,22 @@ class AppRouter {
           pageBuilder: (context, state) => MaterialPage(
             key: state.pageKey,
             child: const AccessibilityTestScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/admin/login',
+          name: 'admin-login',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const AdminLoginScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/admin/dashboard',
+          name: 'admin-dashboard',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const AdminDashboardScreen(),
           ),
         ),
         GoRoute(
