@@ -89,7 +89,6 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     );
 
     if (result == true) {
-      final scaffoldMessenger = ScaffoldMessenger.of(context);
       final success = await QAService.reportQuestion(
         questionId: question.id,
         reason: 'other',
@@ -98,6 +97,7 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
       );
 
       if (!mounted) return;
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
       
       if (success) {
         scaffoldMessenger.showSnackBar(
