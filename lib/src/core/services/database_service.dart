@@ -462,24 +462,37 @@ class DatabaseService {
   
     static Future<Map<String, dynamic>> getReferralStats(String userId) async {
       try {
-        // Get total referrals
-        final referralsResponse = await _client
-            .from('referrals')
-            .select()
-            .eq('referrer_id', userId);
-  
-        final List<dynamic> referrals = referralsResponse as List<dynamic>;
+        // Get total referrals - handle case where referrer_id column might not exist
+        List<dynamic> referrals = [];
+        try {
+          final referralsResponse = await _client
+              .from('referrals')
+              .select()
+              .eq('referrer_id', userId);
+
+          referrals = referralsResponse as List<dynamic>;
+        } catch (e) {
+          // Column might not exist, return empty stats
+          print('Referral column error (referrer_id might not exist): $e');
+          return {
+            'totalReferrals': 0,
+            'completedReferrals': 0,
+            'pendingReferrals': 0,
+            'totalPoints': 0,
+          };
+        }
+
         final totalReferrals = referrals.length;
         final completedReferrals = referrals
             .where((ref) => (ref as Map<String, dynamic>)['status'] == 'completed')
             .length;
-  
+
         // Get total points from referrals
         final totalPoints = referrals.fold(0, (sum, ref) {
           final points = (ref as Map<String, dynamic>)['points_awarded'] as int? ?? 0;
           return sum + points;
         });
-  
+
         return {
           'totalReferrals': totalReferrals,
           'completedReferrals': completedReferrals,
@@ -499,13 +512,21 @@ class DatabaseService {
   
     static Future<List<Referral>> getUserReferrals(String userId) async {
       try {
-        final response = await _client
-            .from('referrals')
-            .select()
-            .eq('referrer_id', userId)
-            .order('created_at', ascending: false);
-  
-        final List<dynamic> data = response as List<dynamic>;
+        List<dynamic> data = [];
+        try {
+          final response = await _client
+              .from('referrals')
+              .select()
+              .eq('referrer_id', userId)
+              .order('created_at', ascending: false);
+
+          data = response as List<dynamic>;
+        } catch (e) {
+          // Column might not exist, return empty list
+          print('Referral column error (referrer_id might not exist): $e');
+          return [];
+        }
+        
         return data
             .map((item) => Referral.fromJson(item as Map<String, dynamic>))
             .toList();

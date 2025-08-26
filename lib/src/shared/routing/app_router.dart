@@ -65,6 +65,26 @@ class AppRouter {
           }
         }
 
+        // Special case: if authenticated admin user goes to root, redirect to admin dashboard
+        if (isAuthenticated && state.matchedLocation == '/') {
+          try {
+            final user = authState!.session!.user;
+            final profile = await SupabaseService.client
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+                .catchError((_) => null);
+
+            if (profile != null && (profile['role'] as String?) == 'admin') {
+              print('Admin user at root, redirecting to admin dashboard');
+              return '/admin/dashboard';
+            }
+          } catch (e) {
+            print('Error checking admin role for root redirect: $e');
+          }
+        }
+
         return null;
       },
       routes: [

@@ -89,6 +89,7 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     );
 
     if (result == true) {
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
       final success = await QAService.reportQuestion(
         questionId: question.id,
         reason: 'other',
@@ -96,12 +97,14 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
         severity: 'medium',
       );
 
+      if (!mounted) return;
+      
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Question reported successfully')),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Failed to report question')),
         );
       }
@@ -172,123 +175,127 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
   }
 
   Widget _buildQuestionCard(Question question, StudyState state) {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Progress indicator
-            LinearProgressIndicator(
-              value: state.progress,
-              backgroundColor: Colors.grey[300],
-              color: Colors.blue,
-            ),
-            const SizedBox(height: 16),
-            
-            // Question text
-            Text(
-              question.questionText,
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            
-            // Options
-            Column(
-              children: question.options.asMap().entries.map((entry) {
-                final index = entry.key;
-                final option = entry.value;
-                
-                Color? buttonColor;
-                if (state.selectedAnswerIndex == index) {
-                  buttonColor = question.isAnswerCorrect(index)
-                      ? Colors.green
-                      : Colors.red;
-                } else if (state.showExplanation && question.isAnswerCorrect(index)) {
-                  buttonColor = Colors.green;
-                }
-                
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: ElevatedButton(
-                    onPressed: state.showExplanation
-                        ? null
-                        : () async => await _selectAnswer(index),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: buttonColor,
-                      foregroundColor: buttonColor != null ? Colors.white : null,
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                    child: Text(
-                      option.text,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            
-            // Explanation
-            if (state.showExplanation) ...[
-              const SizedBox(height: 20),
-              Card(
-                color: Colors.blue[50],
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Explanation:',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.blue[800],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        question.explanation,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ],
-                  ),
-                ),
+    return SingleChildScrollView(
+      child: Card(
+        margin: const EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Progress indicator
+              LinearProgressIndicator(
+                value: state.progress,
+                backgroundColor: Colors.grey[300],
+                color: Colors.blue,
               ),
-            ],
-            
-            // Report Question Button
-            if (state.showExplanation) ...[
               const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () => _reportQuestion(question),
-                icon: const Icon(Icons.flag, size: 16),
-                label: const Text('Report Question'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.orange,
-                  side: const BorderSide(color: Colors.orange),
-                ),
+              
+              // Question text
+              Text(
+                question.questionText,
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
               ),
-            ],
-            
-            // Navigation buttons
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: state.isFirstQuestion ? null : _previousQuestion,
-                  child: const Text('Previous'),
-                ),
-                ElevatedButton(
-                  onPressed: state.showExplanation && !state.isLastQuestion
-                      ? _nextQuestion
-                      : null,
-                  child: const Text('Next'),
+              const SizedBox(height: 24),
+              
+              // Options
+              Column(
+                children: question.options.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final option = entry.value;
+                  
+                  Color? buttonColor;
+                  if (state.selectedAnswerIndex == index) {
+                    buttonColor = question.isAnswerCorrect(index)
+                        ? Colors.green
+                        : Colors.red;
+                  } else if (state.showExplanation && question.isAnswerCorrect(index)) {
+                    buttonColor = Colors.green;
+                  }
+                  
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: ElevatedButton(
+                      onPressed: state.showExplanation
+                          ? null
+                          : () async => await _selectAnswer(index),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: buttonColor,
+                        foregroundColor: buttonColor != null ? Colors.white : null,
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: Text(
+                        option.text,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              
+              // Explanation
+              if (state.showExplanation) ...[
+                const SizedBox(height: 20),
+                Card(
+                  color: Colors.blue[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Explanation:',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.blue[800],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          question.explanation,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
-            ),
-          ],
+              
+              // Report Question Button
+              if (state.showExplanation) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () => _reportQuestion(question),
+                  icon: const Icon(Icons.flag, size: 16),
+                  label: const Text('Report Question'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                    side: const BorderSide(color: Colors.orange),
+                  ),
+                ),
+              ],
+              
+              // Navigation buttons
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: state.isFirstQuestion ? null : _previousQuestion,
+                    child: const Text('Previous'),
+                  ),
+                  ElevatedButton(
+                    onPressed: state.showExplanation && !state.isLastQuestion
+                        ? _nextQuestion
+                        : null,
+                    child: const Text('Next'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

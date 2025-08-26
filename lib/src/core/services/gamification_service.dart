@@ -1,6 +1,6 @@
-import 'package:k53app/src/core/models/achievement.dart';
-import 'package:k53app/src/core/services/database_service.dart';
-import 'package:k53app/src/core/services/supabase_service.dart';
+import '../models/achievement.dart';
+import './database_service.dart';
+import './supabase_service.dart';
 
 class GamificationService {
   static final GamificationService _instance = GamificationService._internal();
