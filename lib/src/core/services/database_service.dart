@@ -84,6 +84,7 @@ class DatabaseService {
     required int count,
     String? category,
     int? learnerCode,
+    String? difficulty,
   }) async {
     try {
       // Get all questions and then shuffle (not ideal for production)
@@ -106,6 +107,27 @@ class DatabaseService {
       
       if (learnerCode != null) {
         questions = questions.where((q) => q.learnerCode == learnerCode).toList();
+      }
+
+      // Filter by difficulty if specified
+      if (difficulty != null) {
+        int? level;
+        switch (difficulty) {
+          case 'easy':
+            level = 1;
+            break;
+          case 'medium':
+            level = 2;
+            break;
+          case 'hard':
+            level = 3;
+            break;
+          default:
+            level = null;
+        }
+        if (level != null) {
+          questions = questions.where((q) => q.difficultyLevel == level).toList();
+        }
       }
 
       // Shuffle and take requested count
@@ -276,6 +298,21 @@ class DatabaseService {
 
       return UserAchievement.fromJson(response as Map<String, dynamic>);
     } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Achievement?> getAchievementById(String achievementId) async {
+    try {
+      final response = await _client
+          .from('achievements')
+          .select()
+          .eq('id', achievementId)
+          .single();
+
+      return Achievement.fromJson(response as Map<String, dynamic>);
+    } catch (e) {
+      print('Error getting achievement by ID: $e');
       return null;
     }
   }

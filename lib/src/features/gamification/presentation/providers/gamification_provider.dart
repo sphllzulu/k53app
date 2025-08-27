@@ -98,6 +98,27 @@ class GamificationNotifier extends StateNotifier<GamificationState> {
   void clearError() {
     state = state.copyWith(error: null);
   }
+
+  Future<void> trackExamSessionComplete({
+    required int correctAnswers,
+    required int totalQuestions,
+    required String category,
+    required bool passed,
+  }) async {
+    try {
+      await GamificationService().trackExamSessionComplete(
+        correctAnswers: correctAnswers,
+        totalQuestions: totalQuestions,
+        category: category,
+        passed: passed,
+      );
+      
+      // Reload stats after tracking
+      await loadUserStats();
+    } catch (e) {
+      print('Error tracking exam session: $e');
+    }
+  }
 }
 
 final gamificationProvider = StateNotifierProvider<GamificationNotifier, GamificationState>((ref) {

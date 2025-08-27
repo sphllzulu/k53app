@@ -74,4 +74,18 @@ class ShareContent {
       if (deepLink != null) 'deepLink': deepLink,
     };
   }
+
+  ShareContent copyWith({
+    String? title,
+    String? message,
+    String? imageUrl,
+    String? deepLink,
+  }) {
+    return ShareContent(
+      title: title ?? this.title,
+      message: message ?? this.message,
+      imageUrl: imageUrl ?? this.imageUrl,
+      deepLink: deepLink ?? this.deepLink,
+    );
+  }
 }

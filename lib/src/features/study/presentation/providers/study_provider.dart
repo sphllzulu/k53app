@@ -15,6 +15,7 @@ class StudyState {
   final String? sessionId;
   final int correctAnswers;
   final int totalAnswered;
+  final Map<String, int> questionStartTimes; // Track when each question was shown
 
   StudyState({
     required this.questions,
@@ -26,6 +27,7 @@ class StudyState {
     this.sessionId,
     required this.correctAnswers,
     required this.totalAnswered,
+    required this.questionStartTimes,
   });
 
   StudyState copyWith({
@@ -38,6 +40,7 @@ class StudyState {
     String? sessionId,
     int? correctAnswers,
     int? totalAnswered,
+    Map<String, int>? questionStartTimes,
   }) {
     return StudyState(
       questions: questions ?? this.questions,
@@ -49,6 +52,7 @@ class StudyState {
       sessionId: sessionId ?? this.sessionId,
       correctAnswers: correctAnswers ?? this.correctAnswers,
       totalAnswered: totalAnswered ?? this.totalAnswered,
+      questionStartTimes: questionStartTimes ?? this.questionStartTimes,
     );
   }
 
@@ -73,6 +77,7 @@ class StudyNotifier extends StateNotifier<StudyState> {
     showExplanation: false,
     correctAnswers: 0,
     totalAnswered: 0,
+    questionStartTimes: {},
   ));
 
   Future<void> loadQuestions({
@@ -120,11 +125,13 @@ class StudyNotifier extends StateNotifier<StudyState> {
           questions: questions,
           isLoading: false,
           sessionId: session?['id'],
+          questionStartTimes: {questions[0].id: DateTime.now().millisecondsSinceEpoch},
         );
       } else {
         state = state.copyWith(
           questions: questions,
           isLoading: false,
+          questionStartTimes: {questions[0].id: DateTime.now().millisecondsSinceEpoch},
         );
       }
     } catch (e) {
@@ -157,6 +164,8 @@ class StudyNotifier extends StateNotifier<StudyState> {
   Future<void> selectAnswer(int answerIndex) async {
     if (state.showExplanation || state.currentQuestion == null) return;
 
+    final startTime = state.questionStartTimes[state.currentQuestion!.id] ?? DateTime.now().millisecondsSinceEpoch;
+    final elapsedMs = DateTime.now().millisecondsSinceEpoch - startTime;
     final isCorrect = state.currentQuestion!.isAnswerCorrect(answerIndex);
     final newCorrectAnswers = isCorrect ? state.correctAnswers + 1 : state.correctAnswers;
 
@@ -167,8 +176,8 @@ class StudyNotifier extends StateNotifier<StudyState> {
       totalAnswered: state.totalAnswered + 1,
     );
 
-    // Record the answer in the database
-    _recordAnswer(answerIndex, isCorrect);
+    // Record the answer with timing
+    _recordAnswer(answerIndex, isCorrect, elapsedMs);
     
     // Track in analytics
     if (state.sessionId != null && state.currentQuestion != null) {
@@ -176,13 +185,13 @@ class StudyNotifier extends StateNotifier<StudyState> {
         sessionId: state.sessionId!,
         questionId: state.currentQuestion!.id,
         isCorrect: isCorrect,
-        elapsedMs: 0, // TODO: Implement timing
+        elapsedMs: elapsedMs,
         hintsUsed: 0,
       );
     }
   }
 
-  Future<void> _recordAnswer(int answerIndex, bool isCorrect) async {
+  Future<void> _recordAnswer(int answerIndex, bool isCorrect, int elapsedMs) async {
     if (state.sessionId == null || state.currentQuestion == null) return;
 
     try {
@@ -191,7 +200,7 @@ class StudyNotifier extends StateNotifier<StudyState> {
         questionId: state.currentQuestion!.id,
         chosenIndex: answerIndex,
         isCorrect: isCorrect,
-        elapsedMs: 0, // TODO: Implement timing
+        elapsedMs: elapsedMs,
         hintsUsed: 0,
       );
     } catch (e) {
@@ -203,20 +212,34 @@ class StudyNotifier extends StateNotifier<StudyState> {
   void nextQuestion() {
     if (state.isLastQuestion) return;
 
+    final newIndex = state.currentQuestionIndex + 1;
+    final newQuestion = state.questions[newIndex];
+    
     state = state.copyWith(
-      currentQuestionIndex: state.currentQuestionIndex + 1,
+      currentQuestionIndex: newIndex,
       selectedAnswerIndex: null,
       showExplanation: false,
+      questionStartTimes: {
+        ...state.questionStartTimes,
+        newQuestion.id: DateTime.now().millisecondsSinceEpoch,
+      },
     );
   }
 
   void previousQuestion() {
     if (state.isFirstQuestion) return;
 
+    final newIndex = state.currentQuestionIndex - 1;
+    final newQuestion = state.questions[newIndex];
+    
     state = state.copyWith(
-      currentQuestionIndex: state.currentQuestionIndex - 1,
+      currentQuestionIndex: newIndex,
       selectedAnswerIndex: null,
       showExplanation: false,
+      questionStartTimes: {
+        ...state.questionStartTimes,
+        newQuestion.id: DateTime.now().millisecondsSinceEpoch,
+      },
     );
   }
 
@@ -235,6 +258,7 @@ class StudyNotifier extends StateNotifier<StudyState> {
       sessionId: state.sessionId,
       correctAnswers: 0,
       totalAnswered: 0,
+      questionStartTimes: {state.questions[0].id: DateTime.now().millisecondsSinceEpoch},
     );
     
     // Track session retry
