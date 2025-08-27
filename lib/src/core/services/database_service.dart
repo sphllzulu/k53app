@@ -23,6 +23,63 @@ class DatabaseService {
     }
   }
 
+  // Update user's mock exam level and completion status
+  static Future<void> updateMockExamProgress({
+    required String userId,
+    int? mockExamLevel,
+    bool? hasCompletedLevel1,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{};
+      
+      if (mockExamLevel != null) updateData['mock_exam_level'] = mockExamLevel;
+      if (hasCompletedLevel1 != null) updateData['has_completed_level1'] = hasCompletedLevel1;
+      
+      if (updateData.isNotEmpty) {
+        await _client
+            .from('profiles')
+            .update(updateData)
+            .eq('id', userId);
+      }
+    } catch (e) {
+      print('Error updating mock exam progress: $e');
+    }
+  }
+
+  // Check if user has completed Level 1 and can access Level 2
+  static Future<bool> canAccessLevel2(String userId) async {
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('has_completed_level1, mock_exam_level')
+          .eq('id', userId)
+          .single();
+
+      final data = response as Map<String, dynamic>;
+      final hasCompleted = data['has_completed_level1'] as bool? ?? false;
+      final currentLevel = data['mock_exam_level'] as int? ?? 1;
+      
+      return hasCompleted && currentLevel >= 2;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Get user's current mock exam level
+  static Future<int> getUserMockExamLevel(String userId) async {
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('mock_exam_level')
+          .eq('id', userId)
+          .single();
+
+      return (response as Map<String, dynamic>)['mock_exam_level'] as int? ?? 1;
+    } catch (e) {
+      return 1;
+    }
+  }
+
   static Future<void> updateUserProfile(UserProfile profile) async {
     await _client
         .from('profiles')

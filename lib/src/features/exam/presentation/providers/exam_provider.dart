@@ -375,6 +375,9 @@ class ExamNotifier extends StateNotifier<ExamState> {
         timeSpentSeconds: timeSpentSeconds,
       );
 
+      // Handle level progression for mock exams
+      await _handleLevelProgression();
+
       // Track gamification progress
       if (state.questions.isNotEmpty) {
         final category = state.questions.first.category;
@@ -384,6 +387,45 @@ class ExamNotifier extends StateNotifier<ExamState> {
       print('Error completing exam: $e');
       // Even if database update fails, we keep the state as completed
       // to prevent multiple submissions
+    }
+  }
+
+  Future<void> _handleLevelProgression() async {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null || state.mockExamConfig == null) return;
+
+    try {
+      final userProfile = await DatabaseService.getUserProfile(userId);
+      if (userProfile == null) return;
+
+      // Check if this is a Level 1 mock exam and user passed
+      if (state.mockExamConfig!.level == 1 && state.hasPassed) {
+        // Update user progress to mark Level 1 as completed
+        await DatabaseService.updateMockExamProgress(
+          userId: userId,
+          hasCompletedLevel1: true,
+        );
+
+        // If user hasn't advanced to Level 2 yet, promote them
+        if (userProfile.mockExamLevel == 1) {
+          await DatabaseService.updateMockExamProgress(
+            userId: userId,
+            mockExamLevel: 2,
+          );
+
+          // Track level up event
+          await AnalyticsService.trackUserEngagement(
+            eventName: 'mock_exam_level_up',
+            properties: {
+              'from_level': 1,
+              'to_level': 2,
+              'session_id': state.sessionId,
+            },
+          );
+        }
+      }
+    } catch (e) {
+      print('Error handling level progression: $e');
     }
   }
 
@@ -440,10 +482,25 @@ class ExamNotifier extends StateNotifier<ExamState> {
 
   // Load mock exam with specific configuration
   Future<void> loadMockExamQuestions(MockExamConfig config) async {
+    String difficulty;
+    switch (config.level) {
+      case 1:
+        difficulty = 'easy';
+        break;
+      case 2:
+        difficulty = 'medium';
+        break;
+      case 3:
+        difficulty = 'hard';
+        break;
+      default:
+        difficulty = 'easy';
+    }
+
     await loadExamQuestions(
       category: config.category,
       learnerCode: config.learnerCode,
-      difficulty: 'easy', // Level 1 uses easy difficulty
+      difficulty: difficulty,
       questionCount: config.questionCount,
       mockExamConfig: config,
     );
