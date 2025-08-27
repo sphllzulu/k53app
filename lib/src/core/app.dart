@@ -5,6 +5,7 @@ import './app_initializer.dart';
 import './services/supabase_service.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
 import '../shared/routing/app_router.dart';
+import '../core/providers/theme_provider.dart';
 
 class K53App extends ConsumerStatefulWidget {
   const K53App({super.key});
@@ -18,9 +19,24 @@ class _K53AppState extends ConsumerState<K53App> {
   Widget build(BuildContext context) {
     // Watch auth state to rebuild when auth changes
     final authState = ref.watch(authProvider);
+    final theme = ref.watch(themeProvider);
     
     // Create router in build method to have access to ref
     final router = AppRouter.router(ref);
+    
+    // Determine theme mode based on provider
+    ThemeMode themeMode;
+    switch (theme) {
+      case AppTheme.light:
+        themeMode = ThemeMode.light;
+        break;
+      case AppTheme.dark:
+        themeMode = ThemeMode.dark;
+        break;
+      case AppTheme.system:
+        themeMode = ThemeMode.system;
+        break;
+    }
 
     return MaterialApp.router(
       title: 'K53 Learner\'s License',
@@ -40,7 +56,7 @@ class _K53AppState extends ConsumerState<K53App> {
         useMaterial3: true,
         fontFamily: 'Inter',
       ),
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       builder: (context, child) {

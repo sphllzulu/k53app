@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/services/supabase_service.dart';
+import '../../../../core/providers/theme_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -11,7 +12,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _isDarkMode = false;
   bool _notificationsEnabled = true;
   bool _soundEffectsEnabled = true;
   bool _vibrationEnabled = true;
@@ -31,21 +31,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           // Appearance Section
           _buildSectionHeader('Appearance'),
-          _buildSwitchTile(
-            title: 'Dark Mode',
-            subtitle: 'Switch between light and dark theme',
-            value: _isDarkMode,
-            onChanged: (value) {
-              setState(() {
-                _isDarkMode = value;
-              });
-              // TODO: Implement theme switching
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Dark mode ${value ? 'enabled' : 'disabled'}')),
-              );
-            },
-            icon: Icons.dark_mode,
-          ),
+          _buildThemeSelectionTile(),
 
           const SizedBox(height: 16),
 
@@ -229,5 +215,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         onTap: onTap,
       ),
     );
+  }
+  Widget _buildThemeSelectionTile() {
+    final currentTheme = ref.watch(themeProvider);
+    
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        leading: Icon(Icons.dark_mode, color: Theme.of(context).colorScheme.primary),
+        title: const Text('Theme', style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(
+          currentTheme == AppTheme.system ? 'System Default' :
+          currentTheme == AppTheme.light ? 'Light Theme' : 'Dark Theme',
+        ),
+        trailing: PopupMenuButton<AppTheme>(
+          icon: const Icon(Icons.arrow_drop_down),
+          onSelected: (theme) {
+            ref.read(themeProvider.notifier).setTheme(theme);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Theme changed to ${_getThemeName(theme)}')),
+            );
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: AppTheme.system,
+              child: Text('System Default (${_getThemeName(AppTheme.system)})'),
+            ),
+            PopupMenuItem(
+              value: AppTheme.light,
+              child: Text('Light Theme'),
+            ),
+            PopupMenuItem(
+              value: AppTheme.dark,
+              child: Text('Dark Theme'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getThemeName(AppTheme theme) {
+    switch (theme) {
+      case AppTheme.light:
+        return 'Light';
+      case AppTheme.dark:
+        return 'Dark';
+      case AppTheme.system:
+        return 'System';
+    }
   }
 }
