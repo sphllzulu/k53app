@@ -12,6 +12,7 @@ import '../../features/study/presentation/screens/study_screen.dart';
 import '../../features/exam/presentation/screens/exam_screen.dart';
 import '../../features/exam/presentation/screens/exam_results_screen.dart';
 import '../../features/exam/presentation/screens/mock_exam_selection_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../core/services/supabase_service.dart';
 
 class AppRouter {
@@ -169,6 +170,14 @@ class AppRouter {
           pageBuilder: (context, state) => MaterialPage(
             key: state.pageKey,
             child: const AdminTestScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/settings',
+          name: 'settings',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const SettingsScreen(),
           ),
         ),
         GoRoute(

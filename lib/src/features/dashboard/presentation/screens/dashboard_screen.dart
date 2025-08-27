@@ -16,14 +16,6 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await SupabaseService.signOut();
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -123,12 +115,7 @@ class DashboardScreen extends ConsumerWidget {
                   icon: Icons.settings,
                   title: 'Settings',
                   subtitle: 'App preferences',
-                  onTap: () {
-                    // TODO: Implement settings navigation
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Settings screen coming soon!')),
-                    );
-                  },
+                  onTap: () => context.go('/settings'),
                   color: Colors.purple,
                 ),
               ],
