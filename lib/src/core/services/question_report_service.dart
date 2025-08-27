@@ -17,6 +17,21 @@ class QuestionReportService {
         throw Exception('User must be authenticated to report questions');
       }
 
+      // Try to create profile if it doesn't exist (handle_new_user trigger might not have fired)
+      try {
+        await _client
+            .from('profiles')
+            .upsert({
+              'id': user.id,
+              'handle': 'user_${user.id.substring(0, 8)}',
+              'learner_code': 1,
+              'locale': 'en'
+            }, onConflict: 'id');
+      } catch (e) {
+        print('DEBUG: Error creating/updating profile: $e');
+        // Continue anyway - the foreign key constraint might still work
+      }
+
       await _client
           .from('question_reports')
           .insert({

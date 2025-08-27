@@ -10,46 +10,55 @@ class QAService {
     required String reason,
     String? description,
     String severity = 'medium',
+    String? sessionId,
   }) async {
     try {
-      // First check if this question already has an open flag
-      final existingFlags = await _client
-          .from('question_flags')
-          .select()
-          .eq('question_id', questionId)
-          .eq('status', 'open');
-
-      String flagId;
+      print('DEBUG: Starting question report for question ID: $questionId');
       
-      if (existingFlags.isEmpty) {
-        // Create new flag
-        final flagResponse = await _client
-            .from('question_flags')
-            .insert({
-              'question_id': questionId,
-              'severity': severity,
-              'status': 'open',
-            })
-            .select();
-
-        flagId = flagResponse.first['id'] as String;
-      } else {
-        // Use existing flag
-        flagId = existingFlags.first['id'] as String;
+      // Get current user ID
+      final currentUser = _client.auth.currentUser;
+      if (currentUser == null) {
+        print('DEBUG: No authenticated user found');
+        return false;
+      }
+      
+      print('DEBUG: Current user ID: ${currentUser.id}');
+      
+      // Try to create profile if it doesn't exist (handle_new_user trigger might not have fired)
+      try {
+        await _client
+            .from('profiles')
+            .upsert({
+              'id': currentUser.id,
+              'handle': 'user_${currentUser.id.substring(0, 8)}',
+              'learner_code': 1,
+              'locale': 'en'
+            }, onConflict: 'id');
+            
+        print('DEBUG: Profile created/updated successfully');
+      } catch (e) {
+        print('DEBUG: Error creating/updating profile: $e');
+        // Continue anyway - the foreign key constraint might still work
       }
 
-      // Create the report
-      await _client
+      // Create the report - note: question_reports table uses 'comment' column, not 'description'
+      print('DEBUG: Inserting report with data: question_id=$questionId, reporter_user_id=${currentUser.id}, reason=$reason, session_id=$sessionId');
+      
+      final response = await _client
           .from('question_reports')
           .insert({
             'question_id': questionId,
-            'flag_id': flagId,
+            'reporter_user_id': currentUser.id,
             'reason': reason,
-            'description': description,
+            'comment': description,
+            'session_id': sessionId,
           });
 
+      print('DEBUG: Report insertion successful: $response');
       return true;
     } catch (e) {
+      print('DEBUG: Error reporting question: $e');
+      print('DEBUG: Error type: ${e.runtimeType}');
       return false;
     }
   }
@@ -58,10 +67,10 @@ class QAService {
   static List<String> getReportReasons() {
     return [
       'incorrect_answer',
-      'poor_explanation',
-      'typo',
-      'outdated',
-      'other',
+      'confusing_question',
+      'multiple_correct',
+      'outdated_info',
+      'other'
     ];
   }
 
@@ -80,11 +89,11 @@ class QAService {
     switch (reason) {
       case 'incorrect_answer':
         return 'Incorrect Answer';
-      case 'poor_explanation':
-        return 'Poor Explanation';
-      case 'typo':
-        return 'Typo/Grammar Error';
-      case 'outdated':
+      case 'confusing_question':
+        return 'Confusing Question';
+      case 'multiple_correct':
+        return 'Multiple Correct Answers';
+      case 'outdated_info':
         return 'Outdated Information';
       case 'other':
         return 'Other Issue';

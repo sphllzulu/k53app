@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/question.dart';
-import '../../../../core/services/qa_service.dart';
 import '../providers/study_provider.dart';
 import '../../../gamification/presentation/providers/gamification_provider.dart';
+import '../../../qa_flagging/presentation/widgets/question_report_button.dart';
+import '../../../qa_flagging/presentation/widgets/question_report_bottom_sheet.dart';
 
 class StudyScreen extends ConsumerStatefulWidget {
   const StudyScreen({super.key});
@@ -69,46 +70,32 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     _pageController.jumpToPage(0);
   }
 
-  Future<void> _reportQuestion(Question question) async {
-    final result = await showDialog<bool>(
+  void _reportQuestion(Question question) {
+    final state = ref.read(studyProvider);
+    final currentSessionId = state.sessionId;
+    
+    if (currentSessionId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot report question - no active session')),
+      );
+      return;
+    }
+
+    // Use the proper reporting bottom sheet
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report Question'),
-        content: const Text('Would you like to report this question for review?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Report'),
-          ),
-        ],
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: QuestionReportBottomSheet(
+          questionId: question.id,
+          sessionId: currentSessionId,
+          questionCategory: question.category,
+        ),
       ),
     );
-
-    if (result == true) {
-      final success = await QAService.reportQuestion(
-        questionId: question.id,
-        reason: 'other',
-        description: 'User reported question during study session',
-        severity: 'medium',
-      );
-
-      if (!mounted) return;
-      final scaffoldMessenger = ScaffoldMessenger.of(context);
-      
-      if (success) {
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(content: Text('Question reported successfully')),
-        );
-      } else {
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(content: Text('Failed to report question')),
-        );
-      }
-    }
   }
 
   Widget _buildCategorySelector() {
@@ -266,13 +253,10 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
               // Report Question Button
               if (state.showExplanation) ...[
                 const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  onPressed: () => _reportQuestion(question),
-                  icon: const Icon(Icons.flag, size: 16),
-                  label: const Text('Report Question'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.orange,
-                    side: const BorderSide(color: Colors.orange),
+                Center(
+                  child: ReportQuestionTextButton(
+                    questionId: question.id,
+                    sessionId: state.sessionId ?? '',
                   ),
                 ),
               ],
