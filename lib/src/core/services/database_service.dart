@@ -499,10 +499,11 @@ class DatabaseService {
     static Future<void> trackReferralShare(String userId) async {
       try {
         await _client
-            .from('referral_events')
+            .from('referrals')
             .insert({
-              'user_id': userId,
-              'event_type': 'share',
+              'referrer_user_id': userId,
+              'medium': 'whatsapp',
+              'campaign': 'referral_share',
               'created_at': DateTime.now().toIso8601String(),
             });
       } catch (e) {
@@ -518,12 +519,11 @@ class DatabaseService {
     }) async {
       try {
         await _client
-            .from('share_events')
+            .from('referrals')
             .insert({
-              'user_id': userId,
-              'platform': platform,
-              'content_type': contentType,
-              'success': success,
+              'referrer_user_id': userId,
+              'medium': platform,
+              'campaign': 'share_event',
               'created_at': DateTime.now().toIso8601String(),
             });
       } catch (e) {

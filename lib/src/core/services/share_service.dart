@@ -1,10 +1,13 @@
-                                                                                                                                                                                                                                  import 'package:share_plus/share_plus.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../models/referral.dart';
 import './database_service.dart';
 import './supabase_service.dart';
 import './gamification_service.dart';
 import '../models/achievement.dart';
+import '../config/environment_config.dart';
 
 class ShareService {
   static final ShareService _instance = ShareService._internal();
@@ -71,10 +74,10 @@ class ShareService {
         deepLink: referralLink,
       );
 
-      await shareContent(content);
+      await shareViaWhatsApp(content);
 
-      // Track referral share
-      await DatabaseService.trackReferralShare(userId);
+      // Track referral share with edge function
+      await _trackWhatsAppReferralShare(userId);
     } catch (e) {
       print('Error sharing referral link: $e');
     }
@@ -101,6 +104,50 @@ class ShareService {
     } catch (e) {
       print('Error tracking share event: $e');
     }
+  }
+
+  // Track WhatsApp referral share using edge function
+  Future<void> _trackWhatsAppReferralShare(String userId) async {
+    try {
+      final supabaseUrl = EnvironmentConfig.supabaseUrl;
+      final functionUrl = '$supabaseUrl/functions/v1/whatsapp-referral-tracker';
+      
+      final referralCode = _generateReferralCode(userId);
+      
+      final response = await http.post(
+        Uri.parse(functionUrl),
+        headers: {
+          'Authorization': 'Bearer ${EnvironmentConfig.supabaseAnonKey}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'event_type': 'share',
+          'referrer_id': userId,
+          'referral_code': referralCode,
+          'campaign_source': 'whatsapp',
+          'campaign_medium': 'social',
+          'campaign_name': 'k53-referral',
+          'deep_link': _generateReferralLink(userId),
+          'platform': 'whatsapp',
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        print('Failed to track WhatsApp referral: ${response.body}');
+        // Fallback to local tracking
+        await DatabaseService.trackReferralShare(userId);
+      }
+    } catch (e) {
+      print('Error tracking WhatsApp referral: $e');
+      // Fallback to local tracking
+      await DatabaseService.trackReferralShare(userId);
+    }
+  }
+
+  // Generate a referral code from user ID
+  String _generateReferralCode(String userId) {
+    // Use first 8 characters of user ID as referral code
+    return userId.substring(0, 8).toUpperCase();
   }
 
   // Handle referral signup (when someone signs up using referral link)

@@ -51,6 +51,7 @@ enum ReferralStatus {
   pending,
   completed,
   expired,
+  share_event,
 }
 
 class ShareContent {
