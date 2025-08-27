@@ -172,6 +172,10 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mock Exam'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/dashboard'),
+        ),
         actions: [
           IconButton(
             icon: Icon(state.isPaused ? Icons.play_arrow : Icons.pause),

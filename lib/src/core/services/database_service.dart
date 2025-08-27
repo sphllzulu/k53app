@@ -579,7 +579,7 @@ class DatabaseService {
           final referralsResponse = await _client
               .from('referrals')
               .select()
-              .eq('referrer_id', userId);
+              .eq('referrer_user_id', userId);
 
           referrals = referralsResponse as List<dynamic>;
         } catch (e) {
@@ -595,14 +595,11 @@ class DatabaseService {
 
         final totalReferrals = referrals.length;
         final completedReferrals = referrals
-            .where((ref) => (ref as Map<String, dynamic>)['status'] == 'completed')
+            .where((ref) => (ref as Map<String, dynamic>)['signed_up_at'] != null)
             .length;
 
-        // Get total points from referrals
-        final totalPoints = referrals.fold(0, (sum, ref) {
-          final points = (ref as Map<String, dynamic>)['points_awarded'] as int? ?? 0;
-          return sum + points;
-        });
+        // Calculate points based on completed referrals (50 points each)
+        final totalPoints = completedReferrals * 50;
 
         return {
           'totalReferrals': totalReferrals,
@@ -628,7 +625,7 @@ class DatabaseService {
           final response = await _client
               .from('referrals')
               .select()
-              .eq('referrer_id', userId)
+              .eq('referrer_user_id', userId)
               .order('created_at', ascending: false);
 
           data = response as List<dynamic>;

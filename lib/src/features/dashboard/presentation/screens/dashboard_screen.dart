@@ -19,103 +19,113 @@ class DashboardScreen extends ConsumerWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Welcome to K53 Learner\'s License App!',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    if (currentUser != null) ...[
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: 0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome section
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Logged in as: ${currentUser.email}',
-                        style: Theme.of(context).textTheme.bodyLarge,
+                        'Welcome to K53 Learner\'s License App!',
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'User ID: ${currentUser.id.substring(0, 8)}...',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                      const SizedBox(height: 8),
+                      if (currentUser != null) ...[
+                        Text(
+                          'Logged in as: ${currentUser.email}',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'User ID: ${currentUser.id.substring(0, 8)}...',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Gamification progress
+              const GamificationProgressWidget(),
+
+              const SizedBox(height: 16),
+
+              // Referral program
+              const ReferralWidget(),
+
+              const SizedBox(height: 24),
+
+              // Quick actions
+              Text(
+                'Quick Actions',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxHeight: 400,
+                ),
+                child: GridView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.2,
+                  ),
+                  children: [
+                    _buildActionCard(
+                      context,
+                      icon: Icons.school,
+                      title: 'Study',
+                      subtitle: 'Learn at your pace',
+                      onTap: () => context.go('/study'),
+                      color: Colors.blue,
+                    ),
+                    _buildActionCard(
+                      context,
+                      icon: Icons.assignment,
+                      title: 'Mock Exam',
+                      subtitle: 'Test knowledge',
+                      onTap: () => context.go('/exam/select'),
+                      color: Colors.green,
+                    ),
+                    _buildActionCard(
+                      context,
+                      icon: Icons.leaderboard,
+                      title: 'Progress',
+                      subtitle: 'View stats',
+                      onTap: () => context.go('/progress'),
+                      color: Colors.orange,
+                    ),
+                    _buildActionCard(
+                      context,
+                      icon: Icons.settings,
+                      title: 'Settings',
+                      subtitle: 'Preferences',
+                      onTap: () => context.go('/settings'),
+                      color: Colors.purple,
+                    ),
                   ],
                 ),
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Gamification progress
-            const GamificationProgressWidget(),
-
-            const SizedBox(height: 16),
-
-            // Referral program
-            const ReferralWidget(),
-
-            const SizedBox(height: 24),
-
-            // Quick actions
-            Text(
-              'Quick Actions',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            GridView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.5,
-              ),
-              children: [
-                _buildActionCard(
-                  context,
-                  icon: Icons.school,
-                  title: 'Study Mode',
-                  subtitle: 'Learn at your own pace',
-                  onTap: () => context.go('/study'),
-                  color: Colors.blue,
-                ),
-                _buildActionCard(
-                  context,
-                  icon: Icons.assignment,
-                  title: 'Mock Exam',
-                  subtitle: 'Test your knowledge',
-                  onTap: () => context.go('/exam/select'),
-                  color: Colors.green,
-                ),
-                _buildActionCard(
-                  context,
-                  icon: Icons.leaderboard,
-                  title: 'Progress',
-                  subtitle: 'View your stats',
-                  onTap: () => context.go('/progress'),
-                  color: Colors.orange,
-                ),
-                _buildActionCard(
-                  context,
-                  icon: Icons.settings,
-                  title: 'Settings',
-                  subtitle: 'App preferences',
-                  onTap: () => context.go('/settings'),
-                  color: Colors.purple,
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

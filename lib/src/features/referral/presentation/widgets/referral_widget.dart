@@ -46,7 +46,10 @@ class ReferralWidget extends ConsumerWidget {
               future: ShareService().getReferralStats(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const SizedBox(
+                    height: 80,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
                 }
                 
                 final stats = snapshot.data ?? {};
@@ -54,36 +57,42 @@ class ReferralWidget extends ConsumerWidget {
                 final completedReferrals = stats['completedReferrals'] ?? 0;
                 final totalPoints = stats['totalPoints'] ?? 0;
                 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Your Referral Stats',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem(
-                          context,
-                          value: totalReferrals.toString(),
-                          label: 'Total Referrals',
-                        ),
-                        _buildStatItem(
-                          context,
-                          value: completedReferrals.toString(),
-                          label: 'Completed',
-                        ),
-                        _buildStatItem(
-                          context,
-                          value: '$totalPoints',
-                          label: 'Points Earned',
-                        ),
-                      ],
-                    ),
-                  ],
+                return ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: 80,
+                    maxHeight: 100,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Your Referral Stats',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatItem(
+                            context,
+                            value: totalReferrals.toString(),
+                            label: 'Total',
+                          ),
+                          _buildStatItem(
+                            context,
+                            value: completedReferrals.toString(),
+                            label: 'Completed',
+                          ),
+                          _buildStatItem(
+                            context,
+                            value: '$totalPoints',
+                            label: 'Points',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 );
               },
             ),

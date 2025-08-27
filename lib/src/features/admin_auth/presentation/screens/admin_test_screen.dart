@@ -112,11 +112,11 @@ class _AdminTestScreenState extends ConsumerState<AdminTestScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            if (_userRole != 'admin')
-              ElevatedButton(
-                onPressed: _setAsAdmin,
-                child: const Text('Set as Admin (Debug)'),
-              ),
+            // if (_userRole != 'admin')
+            //   ElevatedButton(
+            //     onPressed: _setAsAdmin,
+            //     child: const Text('Set as Admin (Debug)'),
+            //   ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => context.go('/admin/dashboard'),

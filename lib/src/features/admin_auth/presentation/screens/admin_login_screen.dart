@@ -215,10 +215,10 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                 child: const Text('← Back to User Login'),
               ),
               const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: () => context.go('/admin/test'),
-                child: const Text('Debug: Test Admin Access'),
-              ),
+              // OutlinedButton(
+              //   onPressed: () => context.go('/admin/test'),
+              //   child: const Text('Debug: Test Admin Access'),
+              // ),
             ],
           ),
         ),

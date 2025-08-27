@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/models/question.dart';
 import '../providers/study_provider.dart';
 import '../../../gamification/presentation/providers/gamification_provider.dart';
@@ -400,6 +401,10 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Study Mode'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/dashboard'),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
