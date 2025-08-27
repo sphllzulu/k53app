@@ -102,12 +102,7 @@ class DashboardScreen extends ConsumerWidget {
                   icon: Icons.leaderboard,
                   title: 'Progress',
                   subtitle: 'View your stats',
-                  onTap: () {
-                    // TODO: Implement progress screen navigation
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Progress tracking coming soon!')),
-                    );
-                  },
+                  onTap: () => context.go('/progress'),
                   color: Colors.orange,
                 ),
                 _buildActionCard(

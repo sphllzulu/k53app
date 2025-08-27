@@ -254,6 +254,23 @@ class DatabaseService {
     }
   }
 
+  // Get user's exam sessions for progress tracking
+  static Future<List<Map<String, dynamic>>> getUserExamSessions(String userId) async {
+    try {
+      final response = await _client
+          .from('sessions')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      final List<dynamic> data = response as List<dynamic>;
+      return data.cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error getting user exam sessions: $e');
+      return [];
+    }
+  }
+
   // Answer Operations
   static Future<void> recordAnswer({
     required String sessionId,

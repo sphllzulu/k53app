@@ -13,6 +13,7 @@ import '../../features/exam/presentation/screens/exam_screen.dart';
 import '../../features/exam/presentation/screens/exam_results_screen.dart';
 import '../../features/exam/presentation/screens/mock_exam_selection_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/progress/presentation/screens/progress_screen.dart';
 import '../../core/services/supabase_service.dart';
 
 class AppRouter {
@@ -178,6 +179,14 @@ class AppRouter {
           pageBuilder: (context, state) => MaterialPage(
             key: state.pageKey,
             child: const SettingsScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/progress',
+          name: 'progress',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const ProgressScreen(),
           ),
         ),
         GoRoute(

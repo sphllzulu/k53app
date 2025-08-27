@@ -135,24 +135,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Privacy Policy',
             subtitle: 'View our privacy practices',
             icon: Icons.privacy_tip,
-            onTap: () {
-              // TODO: Open privacy policy
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Privacy policy coming soon!')),
-              );
-            },
+            onTap: () => _showPrivacyPolicyDialog(context),
             trailing: null,
           ),
           _buildListTile(
             title: 'Terms of Service',
             subtitle: 'View terms and conditions',
             icon: Icons.description,
-            onTap: () {
-              // TODO: Open terms of service
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Terms of service coming soon!')),
-              );
-            },
+            onTap: () => _showTermsOfServiceDialog(context),
             trailing: null,
           ),
         ],
@@ -265,5 +255,129 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       case AppTheme.system:
         return 'System';
     }
+  }
+
+  void _showPrivacyPolicyDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Privacy Policy'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Last Updated: August 27, 2024\n\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                '1. Information We Collect\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                '• Account Information: Email address, user ID\n'
+                '• Study Progress: Questions answered, scores, progress\n'
+                '• Device Information: Device type, operating system\n'
+                '• Usage Data: App interactions, session duration\n\n',
+              ),
+              const Text(
+                '2. How We Use Your Information\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                '• Provide and improve the K53 learning experience\n'
+                '• Track your study progress and achievements\n'
+                '• Send important notifications about your account\n'
+                '• Analyze usage patterns to enhance the app\n\n',
+              ),
+              const Text(
+                '3. Data Security\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                'We implement industry-standard security measures to protect your data. '
+                'All data is encrypted in transit and at rest using secure protocols.\n\n',
+              ),
+              const Text(
+                '4. Your Rights\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                'You can request to access, correct, or delete your personal data at any time '
+                'by contacting us at support@k53app.com.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTermsOfServiceDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Terms of Service'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Last Updated: August 27, 2024\n\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                '1. Acceptance of Terms\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                'By using the K53 Learner\'s License App, you agree to these Terms of Service. '
+                'If you do not agree, please do not use our services.\n\n',
+              ),
+              const Text(
+                '2. User Accounts\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                '• You must provide accurate information when creating an account\n'
+                '• You are responsible for maintaining the security of your account\n'
+                '• You must be at least 16 years old to use this service\n\n',
+              ),
+              const Text(
+                '3. Intellectual Property\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                'All content, including questions, images, and study materials, is protected by copyright. '
+                'You may not reproduce, distribute, or create derivative works without permission.\n\n',
+              ),
+              const Text(
+                '4. Limitation of Liability\n',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                'While we strive to provide accurate K53 test preparation materials, we cannot guarantee '
+                'that using this app will result in passing your actual K53 test. Practice responsibly '
+                'and consult official driving manuals for complete information.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 }

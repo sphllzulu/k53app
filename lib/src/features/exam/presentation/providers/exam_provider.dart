@@ -118,15 +118,15 @@ class ExamNotifier extends StateNotifier<ExamState> {
     _timer?.cancel();
     _examStartTime ??= DateTime.now();
     
-    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) async {
       if (!state.isPaused && !state.isCompleted) {
         final elapsed = DateTime.now().difference(_examStartTime!).inSeconds - _totalPausedDuration;
         final remaining = _examDurationSeconds - elapsed;
         
         if (remaining <= 0) {
           state = state.copyWith(timeRemainingSeconds: 0);
-          _completeExam();
-          _stopTimer();
+          _stopTimer(); // Stop timer first to prevent race conditions
+          await _completeExam();
         } else if (state.timeRemainingSeconds != remaining) {
           state = state.copyWith(timeRemainingSeconds: remaining);
         }
@@ -378,11 +378,8 @@ class ExamNotifier extends StateNotifier<ExamState> {
       // Handle level progression for mock exams
       await _handleLevelProgression();
 
-      // Track gamification progress
-      if (state.questions.isNotEmpty) {
-        final category = state.questions.first.category;
-        // This will be handled by the exam screen using the ref
-      }
+      // Track gamification progress - we'll handle this in the results screen
+      // where we have access to the ref parameter
     } catch (e) {
       print('Error completing exam: $e');
       // Even if database update fails, we keep the state as completed

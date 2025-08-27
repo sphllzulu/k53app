@@ -18,6 +18,7 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
   String? _selectedDifficulty;
   int _questionCount = 30;
   bool _isStarting = false;
+  bool _hasNavigatedToResults = false;
 
   @override
   void initState() {
@@ -447,6 +448,19 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
   @override
   Widget build(BuildContext context) {
     final examState = ref.watch(examProvider);
+    
+    // Listen for exam completion and navigate to results
+    ref.listen<ExamState>(examProvider, (previous, next) {
+      if (next.isCompleted && !_hasNavigatedToResults && mounted) {
+        _hasNavigatedToResults = true;
+        // Add a small delay to ensure the UI updates before navigation
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            context.go('/exam/results');
+          }
+        });
+      }
+    });
 
     if (examState.isLoading) {
       return Scaffold(
