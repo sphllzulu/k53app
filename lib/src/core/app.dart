@@ -39,7 +39,7 @@ class _K53AppState extends ConsumerState<K53App> {
     }
 
     return MaterialApp.router(
-      title: 'K53 Learner\'s License',
+      title: 'DriveReady - K53 Learner\'s License',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,

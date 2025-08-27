@@ -14,6 +14,7 @@ import '../../features/exam/presentation/screens/exam_results_screen.dart';
 import '../../features/exam/presentation/screens/mock_exam_selection_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/progress/presentation/screens/progress_screen.dart';
+import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../core/services/supabase_service.dart';
 
 class AppRouter {
@@ -93,6 +94,14 @@ class AppRouter {
         return null;
       },
       routes: [
+        GoRoute(
+          path: '/splash',
+          name: 'splash',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const SplashScreen(),
+          ),
+        ),
         GoRoute(
           path: '/auth/login',
           name: 'login',
@@ -191,7 +200,7 @@ class AppRouter {
         ),
         GoRoute(
           path: '/',
-          redirect: (context, state) => '/dashboard',
+          redirect: (context, state) => '/splash',
         ),
       ],
     );

@@ -243,7 +243,9 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
                         const SizedBox(height: 8),
                         Text(
                           question.explanation,
-                          style: Theme.of(context).textTheme.bodyLarge,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Colors.black87,
+                              ),
                         ),
                       ],
                     ),

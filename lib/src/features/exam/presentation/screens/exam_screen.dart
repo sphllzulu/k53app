@@ -359,7 +359,9 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   state.currentQuestion!.explanation,
-                                  style: Theme.of(context).textTheme.bodyLarge,
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                        color: Colors.black87,
+                                      ),
                                 ),
                               ],
                             ),
