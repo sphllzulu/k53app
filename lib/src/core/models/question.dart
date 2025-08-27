@@ -63,6 +63,20 @@ class Question {
     return options[correctIndex];
   }
 
+  // Get difficulty as string
+  String get difficulty {
+    switch (difficultyLevel) {
+      case 1:
+        return 'easy';
+      case 2:
+        return 'medium';
+      case 3:
+        return 'hard';
+      default:
+        return 'unknown';
+    }
+  }
+
   @override
   String toString() {
     return 'Question(id: $id, category: $category, learnerCode: $learnerCode, questionText: $questionText)';

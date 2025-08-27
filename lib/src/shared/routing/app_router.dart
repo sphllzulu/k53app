@@ -9,6 +9,9 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/study/presentation/screens/study_screen.dart';
+import '../../features/exam/presentation/screens/exam_screen.dart';
+import '../../features/exam/presentation/screens/exam_results_screen.dart';
+import '../../features/exam/presentation/screens/mock_exam_selection_screen.dart';
 import '../../core/services/supabase_service.dart';
 
 class AppRouter {
@@ -110,6 +113,30 @@ class AppRouter {
           pageBuilder: (context, state) => MaterialPage(
             key: state.pageKey,
             child: const StudyScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/exam',
+          name: 'exam',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const ExamScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/exam/results',
+          name: 'exam-results',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const ExamResultsScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/exam/select',
+          name: 'exam-select',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const MockExamSelectionScreen(),
           ),
         ),
         GoRoute(

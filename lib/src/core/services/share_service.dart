@@ -1,4 +1,5 @@
-import 'package:share_plus/share_plus.dart';
+                                                                                                                                                                                                                                  import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/referral.dart';
 import './database_service.dart';
 import './supabase_service.dart';
@@ -24,6 +25,32 @@ class ShareService {
       await _trackShareEvent(content);
     } catch (e) {
       print('Error sharing content: $e');
+    }
+  }
+
+  // Share content specifically via WhatsApp with deep linking
+  Future<void> shareViaWhatsApp(ShareContent content) async {
+    try {
+      final text = '${content.title}\n\n${content.message}${content.deepLink != null ? '\n\n${content.deepLink}' : ''}';
+      
+      // Encode the text for URL
+      final encodedText = Uri.encodeComponent(text);
+      final whatsappUrl = 'whatsapp://send?text=$encodedText';
+      
+      // Try to launch WhatsApp
+      if (await canLaunch(whatsappUrl)) {
+        await launch(whatsappUrl);
+        
+        // Track share event
+        await _trackShareEvent(content, platform: 'whatsapp');
+      } else {
+        // Fallback to generic share if WhatsApp is not installed
+        await shareContent(content);
+      }
+    } catch (e) {
+      print('Error sharing via WhatsApp: $e');
+      // Fallback to generic share
+      await shareContent(content);
     }
   }
 
@@ -60,14 +87,14 @@ class ShareService {
   }
 
   // Track share event for analytics
-  Future<void> _trackShareEvent(ShareContent content) async {
+  Future<void> _trackShareEvent(ShareContent content, {String platform = 'whatsapp'}) async {
     final userId = SupabaseService.currentUserId;
     if (userId == null) return;
 
     try {
       await DatabaseService.trackShareEvent(
         userId: userId,
-        platform: 'whatsapp',
+        platform: platform,
         contentType: content.title,
         success: true,
       );
@@ -79,7 +106,7 @@ class ShareService {
   // Handle referral signup (when someone signs up using referral link)
   Future<void> handleReferralSignup(String referrerId, String referredEmail) async {
     try {
-      // Create referral record
+      // Create referral record using direct database operations
       final referral = await DatabaseService.createReferral(
         referrerId: referrerId,
         referredEmail: referredEmail,

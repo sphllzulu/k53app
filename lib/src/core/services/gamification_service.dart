@@ -101,6 +101,56 @@ class GamificationService {
     }
   }
 
+  // Track exam session completion
+  Future<void> trackExamSessionComplete({
+    required int correctAnswers,
+    required int totalQuestions,
+    required String category,
+    required bool passed,
+  }) async {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) return;
+
+    try {
+      // Track accuracy achievement
+      final accuracy = totalQuestions > 0 ? correctAnswers / totalQuestions : 0;
+      if (accuracy >= 0.7) { // 70% for passing exam
+        await trackProgress(
+          type: AchievementType.accuracy,
+          value: 1,
+          userId: userId,
+        );
+      }
+
+      // Track completion achievement (every exam counts)
+      await trackProgress(
+        type: AchievementType.completion,
+        value: 1,
+        userId: userId,
+      );
+
+      // Track exam-specific achievements
+      if (passed) {
+        await trackProgress(
+          type: AchievementType.completion, // Or create a new type for exam passes?
+          value: 1,
+          userId: userId,
+        );
+      }
+
+      // Track category-specific achievements
+      if (category.isNotEmpty && category != 'all') {
+        await trackProgress(
+          type: AchievementType.completion,
+          value: 1,
+          userId: userId,
+        );
+      }
+    } catch (e) {
+      print('Error tracking exam session: $e');
+    }
+  }
+
   // Track daily login streak
   Future<void> trackDailyLogin() async {
     final userId = SupabaseService.currentUserId;
@@ -153,12 +203,17 @@ class GamificationService {
 
     try {
       final userAchievements = await getUserAchievements();
-      // We need to fetch the actual achievements to get their point values
       final unlockedAchievements = userAchievements.where((ua) => ua.unlocked);
       
-      // For now, return basic stats - we'll implement proper point calculation later
-      // when we have the actual achievement data
-      final totalPoints = unlockedAchievements.length * 10; // Placeholder
+      // Calculate total points from actual achievement point values
+      int totalPoints = 0;
+      for (final userAchievement in unlockedAchievements) {
+        // Fetch the achievement details to get the point value
+        final achievement = await DatabaseService.getAchievementById(userAchievement.achievementId);
+        if (achievement != null) {
+          totalPoints += achievement.points; // points is int, so this should be fine
+        }
+      }
       
       final level = _calculateLevel(totalPoints);
       

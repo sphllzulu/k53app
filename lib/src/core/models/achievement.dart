@@ -27,7 +27,7 @@ class Achievement {
       name: json['name'],
       description: json['description'],
       icon: json['icon'],
-      points: json['points'],
+      points: (json['points'] is int) ? json['points'] : (json['points']?.toInt() ?? 0),
       type: AchievementType.values.firstWhere(
         (e) => e.toString().split('.').last == json['type'],
         orElse: () => AchievementType.streak,

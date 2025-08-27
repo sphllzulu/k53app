@@ -12,6 +12,8 @@ CREATE TABLE profiles (
     learner_code INTEGER CHECK (learner_code IN (1, 2, 3)),
     locale TEXT DEFAULT 'en',
     study_goal_date DATE,
+    mock_exam_level INTEGER DEFAULT 1 CHECK (mock_exam_level BETWEEN 1 AND 3),
+    has_completed_level1 BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

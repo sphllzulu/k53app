@@ -102,12 +102,7 @@ class DashboardScreen extends ConsumerWidget {
                   icon: Icons.assignment,
                   title: 'Mock Exam',
                   subtitle: 'Test your knowledge',
-                  onTap: () {
-                    // TODO: Implement mock exam navigation
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Mock exam feature coming soon!')),
-                    );
-                  },
+                  onTap: () => context.go('/exam/select'),
                   color: Colors.green,
                 ),
                 _buildActionCard(

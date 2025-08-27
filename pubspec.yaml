@@ -61,6 +61,9 @@ dependencies:
   package_info_plus: ^8.3.1
   device_info_plus: ^10.0.0
 
+  # Edge Function Dependencies
+  deno_postgres_interop: ^0.0.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -74,6 +77,9 @@ dev_dependencies:
   # Linting & Analysis
   flutter_lints: ^5.0.0
   very_good_analysis: ^5.1.0
+
+  # Edge Function Build Tool
+  edge: 0.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
