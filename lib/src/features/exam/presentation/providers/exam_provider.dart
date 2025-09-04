@@ -22,6 +22,7 @@ class ExamState {
   final bool isCompleted;
   final Map<String, int> questionStartTimes; // Track when each question was shown
   final MockExamConfig? mockExamConfig; // Track if this is a mock exam and which config
+  final Map<String, int> userAnswers; // Track user answers for review (questionId -> selectedIndex)
 
   ExamState({
     required this.questions,
@@ -38,7 +39,8 @@ class ExamState {
     required this.isCompleted,
     required this.questionStartTimes,
     this.mockExamConfig,
-  });
+    Map<String, int>? userAnswers,
+  }) : userAnswers = userAnswers ?? {};
 
   ExamState copyWith({
     List<Question>? questions,
@@ -55,6 +57,7 @@ class ExamState {
     bool? isCompleted,
     Map<String, int>? questionStartTimes,
     MockExamConfig? mockExamConfig,
+    Map<String, int>? userAnswers,
   }) {
     return ExamState(
       questions: questions ?? this.questions,
@@ -71,6 +74,7 @@ class ExamState {
       isCompleted: isCompleted ?? this.isCompleted,
       questionStartTimes: questionStartTimes ?? this.questionStartTimes,
       mockExamConfig: mockExamConfig ?? this.mockExamConfig,
+      userAnswers: userAnswers ?? this.userAnswers,
     );
   }
 
@@ -112,6 +116,7 @@ class ExamNotifier extends StateNotifier<ExamState> {
     isCompleted: false,
     questionStartTimes: {},
     mockExamConfig: null,
+    userAnswers: {},
   ));
 
   void _startTimer() {
@@ -233,11 +238,16 @@ class ExamNotifier extends StateNotifier<ExamState> {
     final isCorrect = state.currentQuestion!.isAnswerCorrect(answerIndex);
     final newCorrectAnswers = isCorrect ? state.correctAnswers + 1 : state.correctAnswers;
 
+    // Store the user's answer for review
+    final newUserAnswers = Map<String, int>.from(state.userAnswers);
+    newUserAnswers[state.currentQuestion!.id] = answerIndex;
+
     state = state.copyWith(
       selectedAnswerIndex: answerIndex,
       showExplanation: true,
       correctAnswers: newCorrectAnswers,
       totalAnswered: state.totalAnswered + 1,
+      userAnswers: newUserAnswers,
     );
 
     // Record the answer with timing
@@ -375,9 +385,6 @@ class ExamNotifier extends StateNotifier<ExamState> {
         timeSpentSeconds: timeSpentSeconds,
       );
 
-      // Handle level progression for mock exams
-      await _handleLevelProgression();
-
       // Track gamification progress
       if (state.questions.isNotEmpty) {
         final category = state.questions.first.category;
@@ -390,44 +397,6 @@ class ExamNotifier extends StateNotifier<ExamState> {
     }
   }
 
-  Future<void> _handleLevelProgression() async {
-    final userId = SupabaseService.currentUserId;
-    if (userId == null || state.mockExamConfig == null) return;
-
-    try {
-      final userProfile = await DatabaseService.getUserProfile(userId);
-      if (userProfile == null) return;
-
-      // Check if this is a Level 1 mock exam and user passed
-      if (state.mockExamConfig!.level == 1 && state.hasPassed) {
-        // Update user progress to mark Level 1 as completed
-        await DatabaseService.updateMockExamProgress(
-          userId: userId,
-          hasCompletedLevel1: true,
-        );
-
-        // If user hasn't advanced to Level 2 yet, promote them
-        if (userProfile.mockExamLevel == 1) {
-          await DatabaseService.updateMockExamProgress(
-            userId: userId,
-            mockExamLevel: 2,
-          );
-
-          // Track level up event
-          await AnalyticsService.trackUserEngagement(
-            eventName: 'mock_exam_level_up',
-            properties: {
-              'from_level': 1,
-              'to_level': 2,
-              'session_id': state.sessionId,
-            },
-          );
-        }
-      }
-    } catch (e) {
-      print('Error handling level progression: $e');
-    }
-  }
 
   Future<void> retryExam() async {
     // Reset timer-related variables
@@ -451,6 +420,7 @@ class ExamNotifier extends StateNotifier<ExamState> {
       isCompleted: false,
       questionStartTimes: {state.questions[0].id: DateTime.now().millisecondsSinceEpoch},
       mockExamConfig: state.mockExamConfig,
+      userAnswers: {},
     );
 
     // Restart timer
@@ -482,25 +452,10 @@ class ExamNotifier extends StateNotifier<ExamState> {
 
   // Load mock exam with specific configuration
   Future<void> loadMockExamQuestions(MockExamConfig config) async {
-    String difficulty;
-    switch (config.level) {
-      case 1:
-        difficulty = 'easy';
-        break;
-      case 2:
-        difficulty = 'medium';
-        break;
-      case 3:
-        difficulty = 'hard';
-        break;
-      default:
-        difficulty = 'easy';
-    }
-
     await loadExamQuestions(
       category: config.category,
       learnerCode: config.learnerCode,
-      difficulty: difficulty,
+      difficulty: null, // Remove level-based difficulty mapping
       questionCount: config.questionCount,
       mockExamConfig: config,
     );

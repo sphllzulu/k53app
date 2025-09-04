@@ -6,8 +6,6 @@ class UserProfile {
   final DateTime? studyGoalDate;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final int mockExamLevel; // 1 for Level 1 (easy), 2 for Level 2 (medium)
-  final bool hasCompletedLevel1;
 
   UserProfile({
     required this.id,
@@ -17,8 +15,6 @@ class UserProfile {
     required this.studyGoalDate,
     required this.createdAt,
     required this.updatedAt,
-    this.mockExamLevel = 1,
-    this.hasCompletedLevel1 = false,
   });
 
   // Helper method to create from Supabase response
@@ -33,8 +29,6 @@ class UserProfile {
           : null,
       createdAt: DateTime.parse(data['created_at'] as String),
       updatedAt: DateTime.parse(data['updated_at'] as String),
-      mockExamLevel: data['mock_exam_level'] as int? ?? 1,
-      hasCompletedLevel1: data['has_completed_level1'] as bool? ?? false,
     );
   }
 
@@ -48,8 +42,6 @@ class UserProfile {
       'study_goal_date': studyGoalDate?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'mock_exam_level': mockExamLevel,
-      'has_completed_level1': hasCompletedLevel1,
     };
   }
 
@@ -62,8 +54,6 @@ class UserProfile {
     DateTime? studyGoalDate,
     DateTime? createdAt,
     DateTime? updatedAt,
-    int? mockExamLevel,
-    bool? hasCompletedLevel1,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -73,14 +63,12 @@ class UserProfile {
       studyGoalDate: studyGoalDate ?? this.studyGoalDate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      mockExamLevel: mockExamLevel ?? this.mockExamLevel,
-      hasCompletedLevel1: hasCompletedLevel1 ?? this.hasCompletedLevel1,
     );
   }
 
   @override
   String toString() {
-    return 'UserProfile(id: $id, handle: $handle, learnerCode: $learnerCode, locale: $locale, studyGoalDate: $studyGoalDate, mockExamLevel: $mockExamLevel, hasCompletedLevel1: $hasCompletedLevel1)';
+    return 'UserProfile(id: $id, handle: $handle, learnerCode: $learnerCode, locale: $locale, studyGoalDate: $studyGoalDate)';
   }
 
   @override

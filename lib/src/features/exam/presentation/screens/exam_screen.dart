@@ -18,6 +18,7 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
   String? _selectedDifficulty;
   int _questionCount = 30;
   bool _isStarting = false;
+  bool _hasNavigatedToReview = false;
 
   @override
   void initState() {
@@ -34,6 +35,21 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
         },
       );
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Listen for exam completion and navigate to review screen
+    final examState = ref.watch(examProvider);
+    if (examState.isCompleted && !_hasNavigatedToReview) {
+      _hasNavigatedToReview = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.go('/exam/review');
+        }
+      });
+    }
   }
 
   Future<void> _startExam() async {
@@ -325,7 +341,7 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
                                 minimumSize: const Size(double.infinity, 60),
                               ),
                               child: Text(
-                                option.text,
+                                '${String.fromCharCode(65 + index)}. ${option.text}',
                                 textAlign: TextAlign.center,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,

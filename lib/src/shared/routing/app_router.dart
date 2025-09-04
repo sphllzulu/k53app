@@ -11,6 +11,7 @@ import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/study/presentation/screens/study_screen.dart';
 import '../../features/exam/presentation/screens/exam_screen.dart';
 import '../../features/exam/presentation/screens/exam_results_screen.dart';
+import '../../features/exam/presentation/screens/exam_review_screen.dart';
 import '../../features/exam/presentation/screens/mock_exam_selection_screen.dart';
 import '../../core/services/supabase_service.dart';
 
@@ -137,6 +138,14 @@ class AppRouter {
           pageBuilder: (context, state) => MaterialPage(
             key: state.pageKey,
             child: const MockExamSelectionScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/exam/review',
+          name: 'exam-review',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const ExamReviewScreen(),
           ),
         ),
         GoRoute(
