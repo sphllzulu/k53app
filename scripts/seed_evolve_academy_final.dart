@@ -143,9 +143,9 @@ void main() async {
       'Learner codes: 1 (Motorcycles), 2 (Light Vehicles), 3 (Heavy Vehicles)',
     );
     print('Total questions by category:');
-    print('- Rules of the Road: 72 questions (Evolve Academy)');
-    print('- Vehicle Controls: 14 questions (Evolve Academy)');
-    print('- Total: 86 questions (Evolve Academy Official)');
+    print('- Rules of the Road: ${rulesOfRoad.length} questions (Evolve Academy)');
+    print('- Vehicle Controls: ${vehicleControls.length} questions (Evolve Academy)');
+    print('- Total: ${allQuestions.length} questions (Evolve Academy Official)');
   } catch (e) {
     print('Error seeding questions: $e');
     exit(1);

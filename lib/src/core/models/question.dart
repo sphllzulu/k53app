@@ -8,7 +8,6 @@ class Question {
   final String explanation;
   final int version;
   final bool isActive;
-  final int difficultyLevel;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -22,7 +21,6 @@ class Question {
     required this.explanation,
     required this.version,
     required this.isActive,
-    required this.difficultyLevel,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -47,7 +45,6 @@ class Question {
       explanation: data['explanation'] as String,
       version: data['version'] as int? ?? 1,
       isActive: data['is_active'] as bool? ?? true,
-      difficultyLevel: data['difficulty_level'] as int? ?? 1,
       createdAt: DateTime.parse(data['created_at'] as String),
       updatedAt: DateTime.parse(data['updated_at'] as String),
     );
@@ -63,18 +60,21 @@ class Question {
     return options[correctIndex];
   }
 
-  // Get difficulty as string
-  String get difficulty {
-    switch (difficultyLevel) {
-      case 1:
-        return 'easy';
-      case 2:
-        return 'medium';
-      case 3:
-        return 'hard';
-      default:
-        return 'unknown';
-    }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'category': category,
+      'learner_code': learnerCode,
+      'question_text': questionText,
+      'options': options.map((option) => option.toJson()).toList(),
+      'correct_index': correctIndex,
+      'explanation': explanation,
+      'version': version,
+      'is_active': isActive,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
   }
 
   @override

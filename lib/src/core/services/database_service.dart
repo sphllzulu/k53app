@@ -3,6 +3,7 @@ import '../models/question.dart';
 import '../models/achievement.dart';
 import '../models/referral.dart';
 import './supabase_service.dart';
+import './session_persistence_service.dart';
 
 class DatabaseService {
   static final _client = SupabaseService.client;
@@ -85,7 +86,6 @@ class DatabaseService {
     required int count,
     String? category,
     int? learnerCode,
-    String? difficulty,
   }) async {
     try {
       // Get all questions and then shuffle (not ideal for production)
@@ -108,27 +108,6 @@ class DatabaseService {
       
       if (learnerCode != null) {
         questions = questions.where((q) => q.learnerCode == learnerCode).toList();
-      }
-
-      // Filter by difficulty if specified
-      if (difficulty != null) {
-        int? level;
-        switch (difficulty) {
-          case 'easy':
-            level = 1;
-            break;
-          case 'medium':
-            level = 2;
-            break;
-          case 'hard':
-            level = 3;
-            break;
-          default:
-            level = null;
-        }
-        if (level != null) {
-          questions = questions.where((q) => q.difficultyLevel == level).toList();
-        }
       }
 
       // Shuffle and take requested count
@@ -587,6 +566,80 @@ class DatabaseService {
           .toList();
     } catch (e) {
       return [];
+    }
+  }
+
+  // Session State Persistence Methods
+  static Future<void> saveSessionState({
+    required String sessionId,
+    required Map<String, dynamic> state,
+  }) async {
+    try {
+      await _client
+          .from('session_states')
+          .upsert({
+            'session_id': sessionId,
+            'state_data': state,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+    } catch (e) {
+      print('Error saving session state: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getSessionState(String sessionId) async {
+    try {
+      final response = await _client
+          .from('session_states')
+          .select()
+          .eq('session_id', sessionId)
+          .single();
+
+      return (response as Map<String, dynamic>)['state_data'] as Map<String, dynamic>?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<void> deleteSessionState(String sessionId) async {
+    try {
+      await _client
+          .from('session_states')
+          .delete()
+          .eq('session_id', sessionId);
+    } catch (e) {
+      print('Error deleting session state: $e');
+    }
+  }
+
+  // Get incomplete sessions for a user
+  static Future<List<Map<String, dynamic>>> getIncompleteSessions(String userId) async {
+    try {
+      final response = await _client
+          .from('sessions')
+          .select()
+          .eq('user_id', userId)
+          .eq('is_completed', false)
+          .order('started_at', ascending: false);
+
+      return (response as List<dynamic>).cast<Map<String, dynamic>>();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Mark session as abandoned (for cleanup)
+  static Future<void> markSessionAsAbandoned(String sessionId) async {
+    try {
+      await _client
+          .from('sessions')
+          .update({
+            'is_abandoned': true,
+            'abandoned_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', sessionId);
+    } catch (e) {
+      print('Error marking session as abandoned: $e');
     }
   }
 }

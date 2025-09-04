@@ -4,6 +4,8 @@ import '../../../../core/models/question.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../../../core/services/database_service.dart';
 import '../../../../core/services/supabase_service.dart';
+import '../../../../core/services/exam_timer_service.dart';
+import '../../../../core/services/session_persistence_service.dart';
 import '../../../gamification/presentation/providers/gamification_provider.dart';
 import '../../data/mock_exam_config.dart';
 
@@ -98,11 +100,7 @@ class ExamState {
 }
 
 class ExamNotifier extends StateNotifier<ExamState> {
-  Timer? _timer;
-  int _examDurationSeconds = 45 * 60; // Default 45 minutes for 30 questions
-  DateTime? _examStartTime;
-  DateTime? _lastPauseTime;
-  int _totalPausedDuration = 0;
+  ExamTimerService? _timerService;
 
   ExamNotifier() : super(ExamState(
     questions: [],
@@ -119,64 +117,38 @@ class ExamNotifier extends StateNotifier<ExamState> {
     userAnswers: {},
   ));
 
-  void _startTimer() {
-    _timer?.cancel();
-    _examStartTime ??= DateTime.now();
-    
-    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (!state.isPaused && !state.isCompleted) {
-        final elapsed = DateTime.now().difference(_examStartTime!).inSeconds - _totalPausedDuration;
-        final remaining = _examDurationSeconds - elapsed;
-        
-        if (remaining <= 0) {
-          state = state.copyWith(timeRemainingSeconds: 0);
-          _completeExam();
-          _stopTimer();
-        } else if (state.timeRemainingSeconds != remaining) {
-          state = state.copyWith(timeRemainingSeconds: remaining);
-        }
+  void _setupTimerListener() {
+    _timerService?.timerStream.listen((remainingSeconds) {
+      state = state.copyWith(timeRemainingSeconds: remainingSeconds);
+      
+      if (remainingSeconds <= 0 && !state.isCompleted) {
+        _completeExam();
       }
     });
   }
 
-  void _stopTimer() {
-    _timer?.cancel();
-    _timer = null;
-  }
-
-  void _updatePauseState() {
-    if (state.isPaused) {
-      _lastPauseTime = DateTime.now();
-    } else if (_lastPauseTime != null) {
-      _totalPausedDuration += DateTime.now().difference(_lastPauseTime!).inSeconds;
-      _lastPauseTime = null;
-    }
-  }
-
   @override
   void dispose() {
-    _stopTimer();
+    _timerService?.dispose();
     super.dispose();
   }
 
   Future<void> loadExamQuestions({
     String? category,
     int? learnerCode,
-    String? difficulty,
     int questionCount = 30, // Standard K53 exam has 30 questions
     MockExamConfig? mockExamConfig,
   }) async {
     state = state.copyWith(isLoading: true, error: null, mockExamConfig: mockExamConfig);
 
     // Calculate exam duration based on question count (1.5 minutes per question)
-    _examDurationSeconds = (questionCount * 90).clamp(300, 7200); // Min 5 minutes, max 120 minutes
+    final examDurationSeconds = (questionCount * 90).clamp(300, 7200); // Min 5 minutes, max 120 minutes
 
     try {
       final questions = await DatabaseService.getRandomQuestions(
         count: questionCount,
         category: category,
         learnerCode: learnerCode,
-        difficulty: difficulty,
       );
 
       if (questions.isEmpty) {
@@ -219,14 +191,20 @@ class ExamNotifier extends StateNotifier<ExamState> {
         );
       }
 
-      // Start the exam timer
-      _startTimer();
+      // Initialize and start the exam timer
+      _timerService?.dispose();
+      _timerService = ExamTimerService(totalDurationSeconds: examDurationSeconds);
+      _setupTimerListener();
+      _timerService!.start();
+      
+      // Save initial session state
+      await saveSessionState();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to load exam questions: $e',
       );
-      _stopTimer(); // Ensure timer is stopped on error
+      _timerService?.dispose(); // Ensure timer is stopped on error
     }
   }
 
@@ -333,14 +311,9 @@ class ExamNotifier extends StateNotifier<ExamState> {
     state = state.copyWith(isPaused: newPausedState);
 
     if (newPausedState) {
-      _stopTimer();
-      _lastPauseTime = DateTime.now();
+      _timerService?.pause();
     } else {
-      if (_lastPauseTime != null) {
-        _totalPausedDuration += DateTime.now().difference(_lastPauseTime!).inSeconds;
-        _lastPauseTime = null;
-      }
-      _startTimer();
+      _timerService?.resume();
     }
 
     // Track pause/resume event
@@ -357,7 +330,7 @@ class ExamNotifier extends StateNotifier<ExamState> {
     if (state.isCompleted) return;
     
     // Stop timer immediately to prevent further state changes
-    _stopTimer();
+    _timerService?.dispose();
     state = state.copyWith(isCompleted: true);
 
     if (state.sessionId == null) {
@@ -366,7 +339,11 @@ class ExamNotifier extends StateNotifier<ExamState> {
     }
 
     try {
-      final timeSpentSeconds = _examDurationSeconds - state.timeRemainingSeconds;
+      final timeSpentSeconds = _timerService != null
+          ? _timerService!.remainingSeconds > 0
+            ? _timerService!.remainingSeconds
+            : 0
+          : 0;
       
       // Update session completion
       await DatabaseService.updateSession(
@@ -375,6 +352,10 @@ class ExamNotifier extends StateNotifier<ExamState> {
         timeSpentSeconds: timeSpentSeconds,
         isCompleted: true,
       );
+
+      // Clear session persistence
+      await SessionPersistenceService.clearExamSession();
+      await _timerService?.clearExam();
 
       // Track exam completion in analytics
       await AnalyticsService.trackExamSessionComplete(
@@ -399,13 +380,11 @@ class ExamNotifier extends StateNotifier<ExamState> {
 
 
   Future<void> retryExam() async {
-    // Reset timer-related variables
-    _examStartTime = null;
-    _lastPauseTime = null;
-    _totalPausedDuration = 0;
+    // Dispose of current timer
+    _timerService?.dispose();
 
     // Recalculate exam duration based on current question count
-    _examDurationSeconds = (state.questions.length * 90).clamp(300, 7200);
+    final examDurationSeconds = (state.questions.length * 90).clamp(300, 7200);
 
     state = ExamState(
       questions: state.questions,
@@ -415,7 +394,7 @@ class ExamNotifier extends StateNotifier<ExamState> {
       sessionId: state.sessionId,
       correctAnswers: 0,
       totalAnswered: 0,
-      timeRemainingSeconds: _examDurationSeconds,
+      timeRemainingSeconds: examDurationSeconds,
       isPaused: false,
       isCompleted: false,
       questionStartTimes: {state.questions[0].id: DateTime.now().millisecondsSinceEpoch},
@@ -423,9 +402,13 @@ class ExamNotifier extends StateNotifier<ExamState> {
       userAnswers: {},
     );
 
-    // Restart timer
-    _stopTimer();
-    _startTimer();
+    // Initialize and restart timer
+    _timerService = ExamTimerService(totalDurationSeconds: examDurationSeconds);
+    _setupTimerListener();
+    _timerService!.start();
+
+    // Save session state
+    await saveSessionState();
 
     await AnalyticsService.trackUserEngagement(
       eventName: 'exam_retry',
@@ -450,12 +433,65 @@ class ExamNotifier extends StateNotifier<ExamState> {
     }
   }
 
+  // Save current session state for persistence
+  Future<void> saveSessionState() async {
+    if (state.sessionId == null || state.questions.isEmpty) return;
+
+    final sessionState = SessionState(
+      type: SessionType.exam,
+      questions: state.questions,
+      currentQuestionIndex: state.currentQuestionIndex,
+      selectedAnswerIndex: state.selectedAnswerIndex,
+      showExplanation: state.showExplanation,
+      sessionId: state.sessionId,
+      correctAnswers: state.correctAnswers,
+      totalAnswered: state.totalAnswered,
+      userAnswers: state.userAnswers,
+      additionalData: {
+        'timeRemainingSeconds': state.timeRemainingSeconds,
+        'isPaused': state.isPaused,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      },
+    );
+
+    await SessionPersistenceService.saveExamSession(sessionState);
+  }
+
+  // Load session state from persistence
+  Future<void> loadSessionState(SessionState sessionState) async {
+    state = ExamState(
+      questions: sessionState.questions,
+      currentQuestionIndex: sessionState.currentQuestionIndex,
+      isLoading: false,
+      selectedAnswerIndex: sessionState.selectedAnswerIndex,
+      showExplanation: sessionState.showExplanation,
+      sessionId: sessionState.sessionId,
+      correctAnswers: sessionState.correctAnswers,
+      totalAnswered: sessionState.totalAnswered,
+      timeRemainingSeconds: sessionState.additionalData['timeRemainingSeconds'] ?? 45 * 60,
+      isPaused: sessionState.additionalData['isPaused'] ?? false,
+      isCompleted: false,
+      questionStartTimes: {sessionState.questions[sessionState.currentQuestionIndex].id: DateTime.now().millisecondsSinceEpoch},
+      mockExamConfig: null,
+      userAnswers: sessionState.userAnswers,
+    );
+
+    // Initialize timer with remaining time
+    final remainingSeconds = sessionState.additionalData['timeRemainingSeconds'] ?? 45 * 60;
+    _timerService?.dispose();
+    _timerService = ExamTimerService(totalDurationSeconds: remainingSeconds);
+    _setupTimerListener();
+
+    if (sessionState.additionalData['isPaused'] != true) {
+      _timerService!.start();
+    }
+  }
+
   // Load mock exam with specific configuration
   Future<void> loadMockExamQuestions(MockExamConfig config) async {
     await loadExamQuestions(
       category: config.category,
       learnerCode: config.learnerCode,
-      difficulty: null, // Remove level-based difficulty mapping
       questionCount: config.questionCount,
       mockExamConfig: config,
     );

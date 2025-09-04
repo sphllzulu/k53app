@@ -3,6 +3,8 @@ import '../../../../core/models/question.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../../../core/services/database_service.dart';
 import '../../../../core/services/supabase_service.dart';
+import '../../../../core/services/study_timer_service.dart';
+import '../../../../core/services/session_persistence_service.dart';
 import '../../../gamification/presentation/providers/gamification_provider.dart';
 
 class StudyState {
@@ -16,6 +18,7 @@ class StudyState {
   final int correctAnswers;
   final int totalAnswered;
   final Map<String, int> questionStartTimes; // Track when each question was shown
+  final int elapsedSeconds; // Track time spent in study session
 
   StudyState({
     required this.questions,
@@ -28,6 +31,7 @@ class StudyState {
     required this.correctAnswers,
     required this.totalAnswered,
     required this.questionStartTimes,
+    this.elapsedSeconds = 0,
   });
 
   StudyState copyWith({
@@ -41,6 +45,7 @@ class StudyState {
     int? correctAnswers,
     int? totalAnswered,
     Map<String, int>? questionStartTimes,
+    int? elapsedSeconds,
   }) {
     return StudyState(
       questions: questions ?? this.questions,
@@ -53,6 +58,7 @@ class StudyState {
       correctAnswers: correctAnswers ?? this.correctAnswers,
       totalAnswered: totalAnswered ?? this.totalAnswered,
       questionStartTimes: questionStartTimes ?? this.questionStartTimes,
+      elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
     );
   }
 
@@ -70,6 +76,8 @@ class StudyState {
 }
 
 class StudyNotifier extends StateNotifier<StudyState> {
+  final StudyTimerService _timerService = StudyTimerService();
+  
   StudyNotifier() : super(StudyState(
     questions: [],
     currentQuestionIndex: 0,
@@ -78,7 +86,16 @@ class StudyNotifier extends StateNotifier<StudyState> {
     correctAnswers: 0,
     totalAnswered: 0,
     questionStartTimes: {},
-  ));
+    elapsedSeconds: 0,
+  )) {
+    _setupTimerListener();
+  }
+
+  void _setupTimerListener() {
+    _timerService.timerStream.listen((elapsedSeconds) {
+      state = state.copyWith(elapsedSeconds: elapsedSeconds);
+    });
+  }
 
   Future<void> loadQuestions({
     String? category,
@@ -127,6 +144,10 @@ class StudyNotifier extends StateNotifier<StudyState> {
           sessionId: session?['id'],
           questionStartTimes: {questions[0].id: DateTime.now().millisecondsSinceEpoch},
         );
+
+        // Start timer and save initial session state
+        _timerService.start();
+        await saveSessionState();
       } else {
         state = state.copyWith(
           questions: questions,
@@ -142,6 +163,12 @@ class StudyNotifier extends StateNotifier<StudyState> {
     }
   }
 
+  @override
+  void dispose() {
+    _timerService.dispose();
+    super.dispose();
+  }
+
   Future<void> completeSession() async {
     if (state.sessionId == null || state.questions.isEmpty) return;
 
@@ -150,14 +177,62 @@ class StudyNotifier extends StateNotifier<StudyState> {
       await DatabaseService.updateSession(
         sessionId: state.sessionId!,
         score: state.correctAnswers,
-        timeSpentSeconds: 0, // TODO: Implement timing
+        timeSpentSeconds: state.elapsedSeconds,
         isCompleted: true,
       );
+
+      // Clear timer and session state
+      await _timerService.clearSession();
+      await SessionPersistenceService.clearStudySession();
 
       // Track gamification progress - this will be handled by the study screen
       // since we don't have access to the ref here
     } catch (e) {
       print('Error completing session: $e');
+    }
+  }
+
+  // Save current session state for persistence
+  Future<void> saveSessionState() async {
+    if (state.sessionId == null || state.questions.isEmpty) return;
+
+    final sessionState = SessionState(
+      type: SessionType.study,
+      questions: state.questions,
+      currentQuestionIndex: state.currentQuestionIndex,
+      selectedAnswerIndex: state.selectedAnswerIndex,
+      showExplanation: state.showExplanation,
+      sessionId: state.sessionId,
+      correctAnswers: state.correctAnswers,
+      totalAnswered: state.totalAnswered,
+      userAnswers: {}, // Study mode doesn't track user answers for review
+      additionalData: {
+        'elapsedSeconds': state.elapsedSeconds,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      },
+    );
+
+    await SessionPersistenceService.saveStudySession(sessionState);
+  }
+
+  // Load session state from persistence
+  Future<void> loadSessionState(SessionState sessionState) async {
+    state = StudyState(
+      questions: sessionState.questions,
+      currentQuestionIndex: sessionState.currentQuestionIndex,
+      isLoading: false,
+      selectedAnswerIndex: sessionState.selectedAnswerIndex,
+      showExplanation: sessionState.showExplanation,
+      sessionId: sessionState.sessionId,
+      correctAnswers: sessionState.correctAnswers,
+      totalAnswered: sessionState.totalAnswered,
+      questionStartTimes: {sessionState.questions[sessionState.currentQuestionIndex].id: DateTime.now().millisecondsSinceEpoch},
+      elapsedSeconds: sessionState.additionalData['elapsedSeconds'] ?? 0,
+    );
+
+    // Restore timer state
+    if (sessionState.additionalData['elapsedSeconds'] != null) {
+      _timerService.start();
     }
   }
 
@@ -250,6 +325,9 @@ class StudyNotifier extends StateNotifier<StudyState> {
   }
 
   Future<void> retrySession() async {
+    // Reset timer
+    _timerService.reset();
+    
     state = StudyState(
       questions: state.questions,
       currentQuestionIndex: 0,
@@ -259,7 +337,12 @@ class StudyNotifier extends StateNotifier<StudyState> {
       correctAnswers: 0,
       totalAnswered: 0,
       questionStartTimes: {state.questions[0].id: DateTime.now().millisecondsSinceEpoch},
+      elapsedSeconds: 0,
     );
+    
+    // Start timer and save session state
+    _timerService.start();
+    await saveSessionState();
     
     // Track session retry
     await AnalyticsService.trackUserEngagement(

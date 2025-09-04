@@ -15,7 +15,6 @@ class ExamScreen extends ConsumerStatefulWidget {
 class _ExamScreenState extends ConsumerState<ExamScreen> {
   String? _selectedCategory;
   int? _selectedLearnerCode;
-  String? _selectedDifficulty;
   int _questionCount = 30;
   bool _isStarting = false;
   bool _hasNavigatedToReview = false;
@@ -30,7 +29,6 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
         properties: {
           'category': _selectedCategory,
           'learner_code': _selectedLearnerCode,
-          'difficulty': _selectedDifficulty,
           'question_count': _questionCount,
         },
       );
@@ -61,7 +59,6 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
     await notifier.loadExamQuestions(
       category: _selectedCategory,
       learnerCode: _selectedLearnerCode,
-      difficulty: _selectedDifficulty,
       questionCount: _questionCount,
     );
 
@@ -76,7 +73,6 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
         properties: {
           'category': _selectedCategory,
           'learner_code': _selectedLearnerCode,
-          'difficulty': _selectedDifficulty,
           'question_count': _questionCount,
         },
       );
@@ -123,25 +119,6 @@ class _ExamScreenState extends ConsumerState<ExamScreen> {
             onChanged: (value) {
               setState(() {
                 _selectedLearnerCode = value;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _selectedDifficulty,
-            decoration: const InputDecoration(
-              labelText: 'Difficulty Level',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(value: null, child: Text('All Levels')),
-              DropdownMenuItem(value: 'easy', child: Text('Easy')),
-              DropdownMenuItem(value: 'medium', child: Text('Medium')),
-              DropdownMenuItem(value: 'hard', child: Text('Hard')),
-            ],
-            onChanged: (value) {
-              setState(() {
-                _selectedDifficulty = value;
               });
             },
           ),

@@ -17,49 +17,32 @@ class MockExamConfig {
 
   // All Mock Exams
   static final List<MockExamConfig> allConfigs = [
-    // All Categories - Code 1 (Motorcycles)
+    // All Categories - Combined from all learner codes
     MockExamConfig(
-      id: 'all_code1',
-      title: 'All Categories (Code 1)',
-      learnerCode: 1,
+      id: 'all_codes_combined',
+      title: 'All Categories (Combined Codes)',
       questionCount: 30,
       timeLimitMinutes: 45,
     ),
-    // All Categories - Code 2 (Light Vehicles)
+    // Rules of the Road - Combined from all learner codes
     MockExamConfig(
-      id: 'all_code2',
-      title: 'All Categories (Code 2)',
-      learnerCode: 2,
-      questionCount: 30,
-      timeLimitMinutes: 45,
-    ),
-    // All Categories - Code 3 (Heavy Vehicles)
-    MockExamConfig(
-      id: 'all_code3',
-      title: 'All Categories (Code 3)',
-      learnerCode: 3,
-      questionCount: 30,
-      timeLimitMinutes: 45,
-    ),
-    // Rules of the Road - All Codes
-    MockExamConfig(
-      id: 'rules_all',
+      id: 'rules_combined',
       title: 'Rules of the Road',
       category: 'rules_of_road',
       questionCount: 30,
       timeLimitMinutes: 45,
     ),
-    // Road Signs - All Codes
+    // Road Signs - Combined from all learner codes
     MockExamConfig(
-      id: 'signs_all',
+      id: 'signs_combined',
       title: 'Road Signs',
       category: 'road_signs',
       questionCount: 30,
       timeLimitMinutes: 45,
     ),
-    // Vehicle Controls - All Codes
+    // Vehicle Controls - Combined from all learner codes
     MockExamConfig(
-      id: 'controls_all',
+      id: 'controls_combined',
       title: 'Vehicle Controls',
       category: 'vehicle_controls',
       questionCount: 30,
